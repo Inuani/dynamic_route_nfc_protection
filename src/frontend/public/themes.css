@@ -1,0 +1,46 @@
+/* themes.css */
+:root {
+    /* Brand Colors */
+    --primary: #FF6B6B;
+    --secondary: #4ECDC4;
+    --tertiary: #45B7D1;
+    --success: #96E6A1;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(-45deg, #FF6B6B, #4ECDC4);
+    --gradient-background: linear-gradient(-45deg, #FF6B6B, #4ECDC4, #45B7D1, #96E6A1);
+    --gradient-button: linear-gradient(-45deg, #FF6B6B, #4ECDC4);
+    --gradient-energy: linear-gradient(45deg, var(--primary), var(--secondary), var(--tertiary));
+    
+    /* Overlays & Transparency */
+    --overlay-light: rgba(255, 255, 255, 0.8);
+    --overlay-shine: rgba(255, 255, 255, 0.2);
+    
+    /* Shadows */
+    --shadow-small: 0 5px 15px rgba(0, 0, 0, 0.2);
+    --shadow-large: 0 8px 32px rgba(31, 38, 135, 0.2);
+    --shadow-hover: 0 15px 35px rgba(31, 38, 135, 0.3);
+    --shadow-inset: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+    --text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2);
+    
+    /* Border Radius */
+    --radius-normal: 20px;
+    --radius-full: 50px;
+    
+    /* Spacing */
+    --spacing-small: 15px;
+    --spacing-medium: 25px;
+    --spacing-large: 30px;
+    
+    /* Animations */
+    --transition-speed: 0.3s;
+    --animation-bounce: 2s;
+    --animation-pulse: 3s;
+    --animation-gradient: 15s;
+  }
+  
+  /* Dark theme if needed later */
+  [data-theme="dark"] {
+    --overlay-light: rgba(0, 0, 0, 0.8);
+    --shadow-large: 0 8px 32px rgba(255, 255, 255, 0.1);
+  }

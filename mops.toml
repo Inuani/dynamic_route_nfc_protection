@@ -1,0 +1,10 @@
+[package]
+name = "http_demo"
+version = "0.1.0"
+description = "A simple HTTP server demo"
+
+[dependencies]
+base = "0.12.1"
+server = "1.0.0"
+http-parser = "0.3.1"
+assets = "0.2.2"

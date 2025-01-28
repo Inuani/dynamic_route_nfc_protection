@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- <link rel="stylesheet" href="themes.css">
+    <link rel="stylesheet" href="main.css"> -->
+
+    <title>Invalid scan sorry bro, try again with the real tag!</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #ff007f, #007fff);
+            color: #fff;
+            font-family: 'Arial Black', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            margin-top: 20vh;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+        }
+        p {
+            font-size: 1.5rem;
+            margin: 1rem auto;
+            max-width: 800px;
+        }
+        a {
+            text-decoration: none;
+            color: #fff;
+            padding: 10px 20px;
+            border: 2px solid #fff;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        a:hover {
+            background-color: #fff;
+            color: #007fff;
+        }
+        .neon {
+            animation: neon-flicker 1.5s infinite;
+        }
+        @keyframes neon-flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow: 
+                    0 0 5px #fff,
+                    0 0 10px #fff,
+                    0 0 20px #ff007f,
+                    0 0 30px #ff007f,
+                    0 0 40px #ff007f,
+                    0 0 50px #ff007f,
+                    0 0 75px #ff007f;
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .ii-button {
+            background-color: #29ABE2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .ii-button:hover {
+            background-color: #1a8ac0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg"></canvas>
+    <h1 class="neon">Invalid scan<br />sorry bro!</h1>
+    <p>try again with the real tag!</p>
+    <div id="auth-section">
+        <button id="auth-button" class="ii-button">Sign in</button>
+    </div>
+    <p>Current Principal: <span id="principal-display">Loading...</span></p>
+
+
+
+    <script>
+        // Edgy dynamic background
+        const canvas = document.getElementById('bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        const colors = ['#ff007f', '#007fff', '#ffdd00'];
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 3 + 1;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        initParticles();
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            initParticles();
+        });
+    </script>
+
+<script src="/bundle.js" type="module"></script>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+    "canisters": {
+      "dyna_nfc_protect_routes": {
+        "main": "src/backend/main.mo",
+        "type": "motoko"
+      },
+      "internet_identity": {
+          "type": "custom",
+          "candid": "https://github.com/dfinity/internet-identity/releases/download/release-2024-09-17/internet_identity.did",
+          "wasm": "https://github.com/dfinity/internet-identity/releases/download/release-2024-09-17/internet_identity_dev.wasm.gz",
+          "remote": {
+              "id": {
+                  "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+              }
+          },
+          "specified_id": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+      }
+    },
+    "defaults": {
+      "build": {
+        "args": "",
+        "packtool": "mops sources"
+      }
+    },
+    "output_env_file": ".env",
+    "version": 1
+  }
