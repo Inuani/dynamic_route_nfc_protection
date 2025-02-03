@@ -7,3 +7,4 @@ repomix-output.txt
 .env
 canister_ids.json
 cmacs.json
+__pycache__

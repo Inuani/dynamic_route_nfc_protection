@@ -5,7 +5,7 @@ import Assets "mo:assets";
 import T "mo:assets/Types";
 import Cycles "mo:base/ExperimentalCycles";
 import Array "mo:base/Array";
-import Debug "mo:base/Debug";
+// import Debug "mo:base/Debug";
 import Principal "mo:base/Principal";
 import Routes "routes";
 import Blob "mo:base/Blob";
@@ -188,7 +188,6 @@ shared ({ caller = creator }) actor class () = this {
           body = request.body;
           headers = request.headers;
         };
-        Debug.print(new_request.url);
         return await server.http_request_update(new_request);
       };
     };

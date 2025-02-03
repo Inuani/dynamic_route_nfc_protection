@@ -144,7 +144,7 @@ def setup_route_and_program(canister_id: str, page: str, use_random_key: bool = 
             print(f"Master key changed successfully to: {new_key_str}")
 
         # Now setup the protected route using the obtained UID
-        cmd = f'python3 scripts/hashed_cmacs.py -k 00000000000000000000000000000000 -u {card_uid} -c 50 -o cmacs.json'
+        cmd = f'python3 scripts/hashed_cmacs.py -k 00000000000000000000000000000000 -u {card_uid} -c 30 -o cmacs.json'
         exit_code, stdout, stderr = run_command(cmd)
         if exit_code != 0:
             print(f"Error generating CMACs: {stderr}")
@@ -164,13 +164,6 @@ def setup_route_and_program(canister_id: str, page: str, use_random_key: bool = 
             print(f"Error uploading CMACs: {stderr}")
             return False
         print("Uploaded CMACs successfully")
-
-        cmd = f'dfx deploy {canister_name}'
-        exit_code, stdout, stderr = run_command(cmd)
-        if exit_code != 0:
-            print(f"Error deploying canister: {stderr}")
-            return False
-        print("Deployed canister successfully")
 
         cmd = f'dfx canister call {canister_name} invalidate_cache'
         exit_code, stdout, stderr = run_command(cmd)
