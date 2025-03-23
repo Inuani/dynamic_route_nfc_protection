@@ -65,7 +65,7 @@ update_route_cmacs:
 	dfx canister call $(CANISTER_NAME) update_route_cmacs '("page1.html", vec {})'
 
 setup_route_example:
-	python3 setup_route.py $(CANISTER_NAME) page1.html --params "key=value"
+	python3 scripts/setup_route.py $(CANISTER_NAME) page1.html --params "key=value"
 
 debug:
 	@echo "Canister name is: $(CANISTER_NAME)"
