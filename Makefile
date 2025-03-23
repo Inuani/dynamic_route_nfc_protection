@@ -34,7 +34,7 @@ url:
 	$(OPEN_CMD) http://$(CANISTER_ID).localhost:4943/
 
 upload_assets:
-	icx-asset --replica $(REPLICA_URL) --pem ~/.config/dfx/identity/raygen/identity.pem sync $(CANISTER_ID) src/frontend/public
+	icx-asset --replica $(REPLICA_URL) --pem ~/.config/dfx/identity/raygen/identity.pem sync $(CANISTER_ID) src/frontend/
 	dfx canister call $(if $(filter https://ic0.app,$(REPLICA_URL)),--ic,) $(CANISTER_NAME) invalidate_cache
 
 setup_route_example:

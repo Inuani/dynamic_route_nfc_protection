@@ -146,7 +146,7 @@ def setup_route_and_program(canister_id: str, page: str, params: str = None, use
             print(f"Master key changed successfully to: {new_key_str}")
 
         # Now setup the protected route using the obtained UID
-        cmd = f'python3 scripts/hashed_cmacs.py -k 00000000000000000000000000000000 -u {card_uid} -c 30 -o cmacs.json'
+        cmd = f'python3 scripts/hashed_cmacs.py -k 00000000000000000000000000000000 -u {card_uid} -c 50 -o cmacs.json'
         exit_code, stdout, stderr = run_command(cmd)
         if exit_code != 0:
             print(f"Error generating CMACs: {stderr}")
