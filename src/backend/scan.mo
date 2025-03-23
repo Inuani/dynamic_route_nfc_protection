@@ -57,8 +57,12 @@ module {
 
         let queries = Iter.toArray(Text.split(full_query[1], #char '&'));
 
-        if (queries.size() != 3) {
-            return 0;
+        // if (queries.size() != 3) {
+        //     return 0;
+        // };
+
+        if (queries.size() != 3 and queries.size() != 4) {
+             return 0;
         };
 
         let cmac_query = Iter.toArray(Text.split(queries[2], #char '='));

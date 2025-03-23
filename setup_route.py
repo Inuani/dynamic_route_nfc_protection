@@ -31,7 +31,7 @@ def run_command(command: str) -> Tuple[int, str, str]:
     stdout, stderr = process.communicate()
     return process.returncode, stdout, stderr
 
-def setup_route_and_program(canister_id: str, page: str, use_random_key: bool = False) -> bool:
+def setup_route_and_program(canister_id: str, page: str, params: str = None, use_random_key: bool = False) -> bool:
     """Setup protected route and program NFC card."""
     try:
         # Get canister name from dfx.json
@@ -69,7 +69,9 @@ def setup_route_and_program(canister_id: str, page: str, use_random_key: bool = 
 
         # Get extended payload
         extended_payload_result = ntp.add_additional_ndef_payload_parameter(
-            formed_result["sdm_payload"], "", ""
+            formed_result["sdm_payload"],
+            params.split('=')[0] if params and '=' in params else "",
+            params.split('=')[1] if params and '=' in params else ""
         )
 
         # Setup for writing
@@ -186,10 +188,11 @@ def main():
     parser.add_argument('page', help='The page to protect (e.g., page1.html)')
     parser.add_argument('--random-key', action='store_true', 
                        help='Generate and use a random key instead of default')
+    parser.add_argument('--params', help='Additional query parameters (e.g., param1=value1)')
     
     args = parser.parse_args()
     
-    if setup_route_and_program(args.canister_id, args.page, args.random_key):
+    if setup_route_and_program(args.canister_id, args.page, args.params, args.random_key):
         print("\nSetup completed successfully!")
     else:
         print("\nSetup failed!")

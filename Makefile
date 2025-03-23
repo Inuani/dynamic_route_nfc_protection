@@ -6,7 +6,7 @@ include .env
 
 #icx-asset --replica http://127.0.0.1:4943 --pem ~/.config/dfx/identity/raygen/identity.pem upload $(CANISTER_ID_VELCRO_BOOT) /index.html=src/frontend/public/index.html
 
-# npx repomix --ignore ".mops/,.dfx/,.vscode,node_module/,.gitignore,src/frontend/public/bundle.js,src/frontend/public/edge.html,generate_identity.js,upload.js,identity.json"
+# npx repomix --ignore ".mops/,.dfx/,.vscode,node_module/,.gitignore,src/frontend/public/bundle.js,src/frontend/public/edge.html,ufr-lib/,cmacs.json"
 
 # dfx canister --ic deposit-cycles 1000000000000 velcro_boot
 
@@ -62,30 +62,10 @@ add_route:
 	dfx canister call $(CANISTER_NAME) add_protected_route '("page2.html")'
 
 update_route_cmacs:
-	dfx canister call $(CANISTER_NAME) update_route_cmacs '("page2.html", vec {})'
+	dfx canister call $(CANISTER_NAME) update_route_cmacs '("page1.html", vec {})'
 
-add2:
-	dfx canister call $(CANISTER_NAME) add_protected_route '("page2.html")'
-	python3 scripts/hashed_cmacs.py \
-		-k 00000000000000000000000000000000 \
-		-u 041754E2E51090 \
-		-c 30 \
-		-o cmacs.json
-	python3 scripts/batch_cmacs.py cmacs.json $(CANISTER_NAME) page2.html
-	dfx deploy $(CANISTER_NAME)
-	dfx canister call $(CANISTER_NAME) invalidate_cache
-
-add1:
-	dfx canister call $(CANISTER_NAME) add_protected_route '("page1.html")'
-	python3 scripts/hashed_cmacs.py \
-		-k 00000000000000000000000000000000 \
-		-u 04C054C2E51090 \
-		-c 30 \
-		-o cmacs.json
-	python3 scripts/batch_cmacs.py cmacs.json $(CANISTER_NAME) page1.html
-	dfx deploy $(CANISTER_NAME)
-	dfx canister call $(CANISTER_NAME) invalidate_cache
-
+setup_route_example:
+	python3 setup_route.py $(CANISTER_NAME) page1.html --params "key=value"
 
 debug:
 	@echo "Canister name is: $(CANISTER_NAME)"
