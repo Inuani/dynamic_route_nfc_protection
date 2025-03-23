@@ -4,20 +4,13 @@ import Nat "mo:base/Nat";
 import Assets "mo:assets";
 import T "mo:assets/Types";
 import Cycles "mo:base/ExperimentalCycles";
-import Array "mo:base/Array";
-// import Debug "mo:base/Debug";
 import Principal "mo:base/Principal";
 import Routes "routes";
 import Blob "mo:base/Blob";
 
 shared ({ caller = creator }) actor class () = this {
-  type Request = Server.Request;
-  type Response = Server.Response;
-  type HttpRequest = Server.HttpRequest;
-  type HttpResponse = Server.HttpResponse;
-  type ResponseClass = Server.ResponseClass;
 
-  stable var serializedEntries : Server.SerializedEntries = ([], [], [creator]);
+  
 
   stable let routesState = Routes.init();
   let routes_storage = Routes.RoutesStorage(routesState);
@@ -45,8 +38,6 @@ shared ({ caller = creator }) actor class () = this {
     routes_storage.getRouteCmacs(path);
   };
 
-  var server = Server.Server({ serializedEntries });
-
   public query ({ caller }) func whoAmI() : async Principal {
     return caller;
   };
@@ -55,30 +46,16 @@ shared ({ caller = creator }) actor class () = this {
     return Cycles.balance();
   };
 
+  // SERVER CODE
+  type Request = Server.Request;
+  type Response = Server.Response;
+  type HttpRequest = Server.HttpRequest;
+  type HttpResponse = Server.HttpResponse;
+  type ResponseClass = Server.ResponseClass;
+
+  stable var serializedEntries : Server.SerializedEntries = ([], [], [creator]);
+  var server = Server.Server({ serializedEntries });
   let assets = server.assets;
-
-  public query func listAuthorized() : async [Principal] {
-    server.entries().2;
-  };
-
-  public shared ({ caller }) func deauthorize(other : Principal) : async () {
-    assert (caller == creator);
-    let (urls, patterns, authorized) = server.entries();
-    let filtered = Array.filter<Principal>(
-      authorized,
-      func(p) { p != other },
-    );
-    serializedEntries := (urls, patterns, filtered);
-    server := Server.Server({ serializedEntries });
-  };
-
-  public shared ({ caller }) func authorize(other : Principal) : async () {
-    server.authorize({ caller; other });
-  };
-
-  public query func retrieve(path : Assets.Path) : async Assets.Contents {
-    assets.retrieve(path);
-  };
 
   public shared ({ caller }) func store(
     arg : {
@@ -90,22 +67,6 @@ shared ({ caller = creator }) actor class () = this {
     }
   ) : async () {
     server.store({ caller; arg });
-  };
-
-  stable var cmacs : [Text] = [];
-
-  public shared ({ caller }) func update_cmacs(new_cmacs : [Text]) : async () {
-    assert (caller == creator);
-    cmacs := new_cmacs;
-  };
-
-  public shared ({ caller }) func append_cmacs(new_cmacs : [Text]) : async () {
-    assert (caller == creator);
-    cmacs := Array.append(cmacs, new_cmacs);
-  };
-
-  public query func get_cmacs() : async [Text] {
-    cmacs;
   };
 
   public query func http_request(req : HttpRequest) : async HttpResponse {

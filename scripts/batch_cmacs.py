@@ -19,7 +19,7 @@ def main():
     json_file = sys.argv[1]
     canister_name = sys.argv[2]
     page_path = sys.argv[3]
-    batch_size = 1500  # Safe batch size for terminal
+    batch_size = 1500  # Max batch size for terminal
 
     # Read the full JSON file
     with open(json_file, 'r') as f:
