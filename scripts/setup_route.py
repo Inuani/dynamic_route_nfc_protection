@@ -31,7 +31,7 @@ def run_command(command: str) -> Tuple[int, str, str]:
     stdout, stderr = process.communicate()
     return process.returncode, stdout, stderr
 
-def setup_route_and_program(canister_id: str, page: str, params: str = None, use_random_key: bool = False) -> bool:
+def setup_route_and_program(canister_id: str, page: str, params: str = None, use_random_key: bool = False, ic_mode: bool = False) -> bool:
     """Setup protected route and program NFC card."""
     try:
         # Get canister name from dfx.json
@@ -41,8 +41,11 @@ def setup_route_and_program(canister_id: str, page: str, params: str = None, use
             return False
         print(f"Using canister name from dfx.json: {canister_name}")
 
-        # Form the URI for the card
-        uri = f"http://{canister_id}.localhost:4943/{page}"
+        # Form the URI for the card based on environment
+        if ic_mode:
+            uri = f"https://{canister_id}.raw.icp0.io/{page}"
+        else:
+            uri = f"http://{canister_id}.localhost:4943/{page}"
         print(f"Using URI: {uri}")
 
         # Start card programming following ntag424_programmer.py logic
@@ -153,21 +156,27 @@ def setup_route_and_program(canister_id: str, page: str, params: str = None, use
             return False
         print("Generated CMACs successfully")
 
-        cmd = f'dfx canister call {canister_name} add_protected_route \'("{page}")\''
+        # Add --ic flag to dfx calls when in IC mode
+        ic_flag = "--ic " if ic_mode else ""
+        
+        cmd = f'dfx canister call {ic_flag}{canister_name} add_protected_route \'("{page}")\''
         exit_code, stdout, stderr = run_command(cmd)
         if exit_code != 0:
             print(f"Error adding protected route: {stderr}")
             return False
         print("Added protected route successfully")
 
-        cmd = f'python3 scripts/batch_cmacs.py cmacs.json {canister_name} {page}'
+        # Pass the ic_mode flag to batch_cmacs.py
+        ic_flag_param = "--ic" if ic_mode else ""
+        cmd = f'python3 scripts/batch_cmacs.py cmacs.json {canister_name} {page} {ic_flag_param}'
         exit_code, stdout, stderr = run_command(cmd)
         if exit_code != 0:
             print(f"Error uploading CMACs: {stderr}")
             return False
         print("Uploaded CMACs successfully")
 
-        cmd = f'dfx canister call {canister_name} invalidate_cache'
+        # Invalidate cache
+        cmd = f'dfx canister call {ic_flag}{canister_name} invalidate_cache'
         exit_code, stdout, stderr = run_command(cmd)
         if exit_code != 0:
             print(f"Error invalidating cache: {stderr}")
@@ -189,10 +198,12 @@ def main():
     parser.add_argument('--random-key', action='store_true', 
                        help='Generate and use a random key instead of default')
     parser.add_argument('--params', help='Additional query parameters (e.g., param1=value1)')
+    parser.add_argument('--ic', action='store_true',
+                       help='Use IC production mode (connects to ICP network instead of local replica)')
     
     args = parser.parse_args()
     
-    if setup_route_and_program(args.canister_id, args.page, args.params, args.random_key):
+    if setup_route_and_program(args.canister_id, args.page, args.params, args.random_key, args.ic):
         print("\nSetup completed successfully!")
     else:
         print("\nSetup failed!")

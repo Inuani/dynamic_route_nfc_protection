@@ -12,13 +12,20 @@ def convert_to_candid(data):
     return '(vec {' + ';'.join(quoted_strings) + '})'
 
 def main():
-    if len(sys.argv) != 4:
-        print("Usage: python3 batch_cmacs.py <cmacs_file> <canister_name> <page_path>")
+    # Updated to accept an optional --ic flag
+    if len(sys.argv) not in [4, 5]:
+        print("Usage: python3 batch_cmacs.py <cmacs_file> <canister_name> <page_path> [--ic]")
         sys.exit(1)
 
     json_file = sys.argv[1]
     canister_name = sys.argv[2]
     page_path = sys.argv[3]
+    
+    # Check if --ic flag is present
+    ic_mode = False
+    if len(sys.argv) == 5 and sys.argv[4] == "--ic":
+        ic_mode = True
+    
     batch_size = 1500  # Max batch size for terminal
 
     # Read the full JSON file
@@ -30,14 +37,17 @@ def main():
     total_batches = len(batches)
 
     print(f"Processing {len(all_cmacs)} CMACs in {total_batches} batches")
+    
+    # Add --ic flag to dfx command if in IC mode
+    ic_flag = "--ic " if ic_mode else ""
 
     # Process each batch
     for i, batch in enumerate(batches, 1):
         print(f"Processing batch {i}/{total_batches}")
         candid_data = convert_to_candid(batch)
         
-        # Call the canister with the batch
-        cmd = f'dfx canister call {canister_name} append_route_cmacs \'("{page_path}", {candid_data})\''
+        # Call the canister with the batch, including --ic flag if needed
+        cmd = f'dfx canister call {ic_flag}{canister_name} append_route_cmacs \'("{page_path}", {candid_data})\''
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         
         if result.returncode != 0:
