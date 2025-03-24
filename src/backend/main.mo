@@ -10,8 +10,6 @@ import Blob "mo:base/Blob";
 
 shared ({ caller = creator }) actor class () = this {
 
-  
-
   stable let routesState = Routes.init();
   let routes_storage = Routes.RoutesStorage(routesState);
 
@@ -71,31 +69,7 @@ shared ({ caller = creator }) actor class () = this {
 
   public query func http_request(req : HttpRequest) : async HttpResponse {
 
-    let request = {
-      url = switch (Text.endsWith(req.url, #text "/")) {
-        case true {
-          let trimmedSlash = Text.trimEnd(req.url, #text "/");
-          let trimmedDot = Text.trimEnd(trimmedSlash, #text ".");
-          if (Text.contains(trimmedDot, #text ".")) {
-            trimmedDot;
-          } else {
-            trimmedDot # ".html";
-          };
-        };
-        case false {
-          if (Text.contains(req.url, #text ".")) {
-            req.url;
-          } else {
-            req.url # ".html";
-          };
-        };
-      };
-      method = req.method;
-      body = req.body;
-      headers = req.headers;
-    };
-
-    if (routes_storage.isProtectedRoute(request.url)) {
+    if (routes_storage.isProtectedRoute(req.url)) {
       return {
         status_code = 426;
         headers = [];
@@ -105,39 +79,16 @@ shared ({ caller = creator }) actor class () = this {
       };
     };
 
-    server.http_request(request);
+    server.http_request(req);
 
   };
 
   public func http_request_update(req : HttpRequest) : async HttpResponse {
-    let request = {
-      url = switch (Text.endsWith(req.url, #text "/")) {
-        case true {
-          let trimmedSlash = Text.trimEnd(req.url, #text "/");
-          let trimmedDot = Text.trimEnd(trimmedSlash, #text ".");
-          if (Text.contains(trimmedDot, #text ".")) {
-            trimmedDot;
-          } else {
-            trimmedDot # ".html";
-          };
-        };
-        case false {
-          if (Text.contains(req.url, #text ".")) {
-            req.url;
-          } else {
-            req.url # ".html";
-          };
-        };
-      };
-      method = req.method;
-      body = req.body;
-      headers = req.headers;
-    };
 
     // Check each protected route
     let routes_array = routes_storage.listProtectedRoutes();
     for ((path, protection) in routes_array.vals()) {
-      if (Text.contains(request.url, #text path)) {
+      if (Text.contains(req.url, #text path)) {
         let hasAccess = routes_storage.verifyRouteAccess(path, req.url);
         let new_request = {
           url = if (hasAccess) {
@@ -145,9 +96,9 @@ shared ({ caller = creator }) actor class () = this {
           } else {
             "/edge.html";
           };
-          method = request.method;
-          body = request.body;
-          headers = request.headers;
+          method = req.method;
+          body = req.body;
+          headers = req.headers;
         };
         return await server.http_request_update(new_request);
       };

@@ -4,9 +4,7 @@ include .env
 # canisterId.localhost:4943/whatever_route
 # http://br5f7-7uaaa-aaaaa-qaaca-cai.localhost:4943
 
-#icx-asset --replica http://127.0.0.1:4943 --pem ~/.config/dfx/identity/raygen/identity.pem upload $(CANISTER_ID_VELCRO_BOOT) /index.html=src/frontend/public/index.html
-
-# npx repomix --ignore ".mops/,.dfx/,.vscode,node_module/,.gitignore,src/frontend/public/bundle.js,src/frontend/public/edge.html,ufr-lib/,cmacs.json"
+# repomix --ignore "ufr-lib/"     
 
 
 REPLICA_URL := $(if $(filter ic,$(subst ',,$(DFX_NETWORK))),https://ic0.app,http://127.0.0.1:4943)
@@ -40,6 +38,9 @@ upload_assets:
 setup_route_example:
 	python3 scripts/setup_route.py $(CANISTER_ID) page1.html --params "key=value"
 
-debug:
-	@echo "Canister name is: $(CANISTER_NAME)"
-	@echo "Canister ID variable: CANISTER_ID_$(shell echo $(CANISTER_NAME) | tr '[:lower:]' '[:upper:]')"
+random_key:
+	python3 scripts/setup_route.py $(CANISTER_ID) page1.html --random-key --params "key=value"
+
+
+reinstall:
+	dfx canister install $(CANISTER_NAME) --mode=reinstall
