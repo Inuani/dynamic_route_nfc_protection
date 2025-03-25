@@ -1,0 +1,2492 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+================================================================
+File Summary
+================================================================
+
+Purpose:
+--------
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+
+File Format:
+------------
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Multiple file entries, each consisting of:
+  a. A separator line (================)
+  b. The file path (File: path/to/file)
+  c. Another separator line
+  d. The full contents of the file
+  e. A blank line
+
+Usage Guidelines:
+-----------------
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+
+Notes:
+------
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: ufr-lib/
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+
+Additional Info:
+----------------
+
+================================================================
+Directory Structure
+================================================================
+scripts/
+  batch_cmacs.py
+  card_types.py
+  hashed_cmacs.py
+  ntag424_programmer.py
+  setup_route.py
+src/
+  backend/
+    main.mo
+    routes.mo
+    scan.mo
+    sha.mo
+  frontend/
+    edge.html
+    index.html
+    page1.html
+    page2.html
+.gitignore
+dfx.json
+Makefile
+mops.toml
+
+================================================================
+Files
+================================================================
+
+================
+File: scripts/batch_cmacs.py
+================
+#!/usr/bin/env python3
+import json
+import subprocess
+import sys
+
+def split_list(lst, batch_size):
+    return [lst[i:i + batch_size] for i in range(0, len(lst), batch_size)]
+
+def convert_to_candid(data):
+    # Properly quote each string
+    quoted_strings = [f'"{x}"' for x in data]
+    return '(vec {' + ';'.join(quoted_strings) + '})'
+
+def main():
+    # Updated to accept an optional --ic flag
+    if len(sys.argv) not in [4, 5]:
+        print("Usage: python3 batch_cmacs.py <cmacs_file> <canister_name> <page_path> [--ic]")
+        sys.exit(1)
+
+    json_file = sys.argv[1]
+    canister_name = sys.argv[2]
+    page_path = sys.argv[3]
+    
+    # Check if --ic flag is present
+    ic_mode = False
+    if len(sys.argv) == 5 and sys.argv[4] == "--ic":
+        ic_mode = True
+    
+    batch_size = 1500  # Max batch size for terminal
+
+    # Read the full JSON file
+    with open(json_file, 'r') as f:
+        all_cmacs = json.load(f)
+
+    # Split into batches
+    batches = split_list(all_cmacs, batch_size)
+    total_batches = len(batches)
+
+    print(f"Processing {len(all_cmacs)} CMACs in {total_batches} batches")
+    
+    # Add --ic flag to dfx command if in IC mode
+    ic_flag = "--ic " if ic_mode else ""
+
+    # Process each batch
+    for i, batch in enumerate(batches, 1):
+        print(f"Processing batch {i}/{total_batches}")
+        candid_data = convert_to_candid(batch)
+        
+        # Call the canister with the batch, including --ic flag if needed
+        cmd = f'dfx canister call {ic_flag}{canister_name} append_route_cmacs \'("{page_path}", {candid_data})\''
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            print(f"Error processing batch {i}: {result.stderr}")
+            sys.exit(1)
+        
+        print(f"Successfully processed batch {i}")
+
+if __name__ == "__main__":
+    main()
+
+================
+File: scripts/card_types.py
+================
+DLOGIC_CARD_TYPE = {
+    0x00: 'DL_NO_CARD',
+    0x01: 'DL_MIFARE_ULTRALIGHT',
+    0x02: 'DL_MIFARE_ULTRALIGHT_EV1_11',
+    0x03: 'DL_MIFARE_ULTRALIGHT_EV1_21',
+    0x04: 'DL_MIFARE_ULTRALIGHT_C',
+    0x05: 'DL_NTAG_203',
+    0x06: 'DL_NTAG_210',
+    0x07: 'DL_NTAG_212',
+    0x08: 'DL_NTAG_213',
+    0x09: 'DL_NTAG_215',
+    0x0A: 'DL_NTAG_216',
+    0x0B: 'DL_MIKRON_MIK640D',
+    0x0C: 'NFC_T2T_GENERIC',
+    0x0D: 'DL_NT3H_1101',
+    0x0E: 'DL_NT3H_1201',
+    0x0F: 'DL_NT3H_2111',
+    0x10: 'DL_NT3H_2211',
+    0x11: 'DL_NTAG_413_DNA',
+    0x12: 'DL_NTAG_424_DNA',
+    0x13: 'DL_NTAG_424_DNA_TT',
+    0x14: 'DL_NTAG_210U',
+    0x15: 'DL_NTAG_213_TT',
+    0x19: 'DL_MIFARE_CLASSIC_2K',
+
+    0x20: 'DL_MIFARE_MINI',
+    0x21: 'DL_MIFARE_CLASSIC_1K',
+    0x22: 'DL_MIFARE_CLASSIC_4K',
+    0x23: 'DL_MIFARE_PLUS_S_2K_SL0',
+    0x24: 'DL_MIFARE_PLUS_S_4K_SL0',
+    0x25: 'DL_MIFARE_PLUS_X_2K_SL0',
+    0x26: 'DL_MIFARE_PLUS_X_4K_SL0',
+    0x27: 'DL_MIFARE_DESFIRE',
+    0x28: 'DL_MIFARE_DESFIRE_EV1_2K',
+    0x29: 'DL_MIFARE_DESFIRE_EV1_4K',
+    0x2A: 'DL_MIFARE_DESFIRE_EV1_8K',
+    0x2B: 'DL_MIFARE_DESFIRE_EV2_2K',
+    0x2C: 'DL_MIFARE_DESFIRE_EV2_4K',
+    0x2D: 'DL_MIFARE_DESFIRE_EV2_8K',
+    0x2E: 'DL_MIFARE_PLUS_S_2K_SL1',
+    0x2F: 'DL_MIFARE_PLUS_X_2K_SL1',
+    0x30: 'DL_MIFARE_PLUS_EV1_2K_SL1',
+    0x31: 'DL_MIFARE_PLUS_X_2K_SL2',
+    0x32: 'DL_MIFARE_PLUS_S_2K_SL3',
+    0x33: 'DL_MIFARE_PLUS_X_2K_SL3',
+    0x34: 'DL_MIFARE_PLUS_EV1_2K_SL3',
+    0x35: 'DL_MIFARE_PLUS_S_4K_SL1',
+    0x36: 'DL_MIFARE_PLUS_X_4K_SL1',
+    0x37: 'DL_MIFARE_PLUS_EV1_4K_SL1',
+    0x38: 'DL_MIFARE_PLUS_X_4K_SL2',
+    0x39: 'DL_MIFARE_PLUS_S_4K_SL3',
+    0x3A: 'DL_MIFARE_PLUS_X_4K_SL3',
+    0x3B: 'DL_MIFARE_PLUS_EV1_4K_SL3',
+    0x3C: 'DL_MIFARE_PLUS_SE_SL0',
+    0x3D: 'DL_MIFARE_PLUS_SE_SL1',
+    0x3E: 'DL_MIFARE_PLUS_SE_SL3',
+    0x3F: 'DL_MIFARE_DESFIRE_LIGHT',
+
+    0x40: 'DL_GENERIC_ISO14443_4',
+    0x41: 'DL_GENERIC_ISO14443_4_TYPE_B',
+    0x42: 'DL_GENERIC_ISO14443_3_TYPE_B',
+    0x43: 'DL_MIFARE_PLUS_EV1_2K_SL0',
+    0x44: 'DL_MIFARE_PLUS_EV1_4K_SL0',
+    0x45: 'DL_MIFARE_DESFIRE_EV3_2K',
+    0x46: 'DL_MIFARE_DESFIRE_EV3_4K',
+    0x47: 'DL_MIFARE_DESFIRE_EV3_8K',
+
+    0x60: 'DL_MOBILE_AID',
+    0x6A: 'DL_APPLE_VAS_V1',
+    0x6B: 'DL_APPLE_VAS_V2',
+    0x80: 'DL_IMEI_UID',
+
+    0x82: 'M24SR02',
+    0x8A: 'M24SR02_AUTOMOTIVE',
+    0x86: 'M24SR04',
+    0x8E: 'M24SR04_AUTOMOTIVE',
+    0x85: 'M24SR16',
+    0x8D: 'M24SR16_AUTOMOTIVE',
+    0x84: 'M24SR64',
+    0x8C: 'M24SR64_AUTOMOTIVE',
+
+    0xA0: 'DLSigner81',
+    0xA1: 'DLSigner22',
+    0xA2: 'DLSigner30',
+    0xA3: 'DLSigner10',
+    0xAA: 'DLSigner145'
+}
+
+================
+File: scripts/hashed_cmacs.py
+================
+from Crypto.Cipher import AES
+from Crypto.Hash import CMAC
+from Crypto.Hash import SHA256
+import binascii
+import argparse
+import hashlib
+import json
+
+parser = argparse.ArgumentParser(
+    prog='CMAC Generator',
+    description='Generate CMAC hashes for NFC authentication'
+)
+
+parser.add_argument('-k', '--key', required=True, type=str, help='The key to use for the SDMMAC')
+parser.add_argument('-u', '--uid', required=True, type=str, help='The UID to use for the SDMMAC')
+parser.add_argument('-c', '--count', default=42000, type=int, help='The count value')
+parser.add_argument('-o', '--output', required=True, type=str, help='Output JSON file path')
+
+def decode(hex_str):
+    return binascii.unhexlify(hex_str)
+
+def encode(bytes_str):
+    return binascii.hexlify(bytes_str).decode().upper()
+
+def SDMMAC(count, uid, mKey):
+    cmac = CMAC.new(decode(mKey), ciphermod=AES)
+    sv1 = "3CC300010080" + uid + count
+    cmac.update(decode(sv1))
+    k1 = encode(cmac.digest())
+    
+    fullSDMMAC = CMAC.new(decode(k1), ciphermod=AES)
+    fullSDMMAC.update(b'')
+    
+    fullString = encode(fullSDMMAC.digest())
+    
+    s1 = fullString[2:4]
+    s2 = fullString[6:8]
+    s3 = fullString[10:12]
+    s4 = fullString[14:16]
+    s5 = fullString[18:20]
+    s6 = fullString[22:24]
+    s7 = fullString[26:28]
+    s8 = fullString[30:32]
+    
+    return (s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8).upper()
+
+def int_to_little_endian_3byte_hex(num):
+    hex_string = format(num, '06x')
+    return ''.join(reversed([hex_string[i:i+2] for i in range(0, len(hex_string), 2)]))
+
+def generate_hashes(count, uid, key):
+    return [hashlib.sha256(SDMMAC(int_to_little_endian_3byte_hex(i), uid, key).encode('utf-8')).hexdigest() 
+            for i in range(1, count)]
+
+def main():
+    args = parser.parse_args()
+    
+    if len(args.key) != 32:
+        print("Key must be 32 characters long")
+        return
+
+    hashes = generate_hashes(args.count, args.uid, args.key)
+    
+    # Save hashes to JSON file
+    with open(args.output, 'w') as f:
+        json.dump(hashes, f)
+    
+    print(f"Generated {len(hashes)} hashes and saved to {args.output}")
+
+if __name__ == "__main__":
+    main()
+
+================
+File: scripts/ntag424_programmer.py
+================
+import ctypes
+from ctypes import *
+import sys
+import platform
+import os
+import time
+import card_types
+from datetime import datetime
+##########################################################################
+# uFCODER - LOAD LIBRARY
+##########################################################################
+
+print("sys.platform = " + sys.platform)
+if sys.platform.startswith('win'):
+    import msvcrt
+    from ctypes import windll
+    # Used for specifying lib for OS version, 32/64bit
+    if platform.architecture()[0] == '32bit':
+        uFR = ctypes.windll.LoadLibrary(
+            "ufr-lib//windows//x86//uFCoder-x86.dll")
+    elif platform.architecture()[0] == '64bit':
+        uFR = ctypes.windll.LoadLibrary(
+            "ufr-lib//windows//x86_64//uFCoder-x86_64.dll")
+elif sys.platform.startswith('linux'):
+    # used for specifying lib for OS version, 32/64bit
+    if os.uname()[4][:3] == 'arm':
+        uFR = cdll.LoadLibrary("ufr-lib//linux//arm-hf//libuFCoder-armhf.so")
+    elif platform.architecture()[0] == '32bit':
+        uFR = cdll.LoadLibrary("ufr-lib//linux//x86//libuFCoder-x86.so")
+    elif platform.architecture()[0] == '64bit':
+        uFR = cdll.LoadLibrary("ufr-lib//linux//x86_64//libuFCoder-x86_64.so")
+elif sys.platform.startswith('darwin'):
+    uFR = cdll.LoadLibrary("ufr-lib//macos//x86_64//libuFCoder-x86_64.dylib")
+else:
+    print("Platform not recognized? os.uname = " + os.uname)
+
+##########################################################################
+# uFCODER API - IMPORT FUNCTIONS
+##########################################################################
+
+def ReaderOpenEx(reader_type, port_name, port_interface, arg):
+    openReader = uFR.ReaderOpenEx
+    openReader.argtypes = (c_uint32, c_char_p, c_uint32, c_char_p)
+    openReader.restype = c_uint
+    b = c_char_p(port_name.encode('utf-8'))
+    c = c_char_p(arg.encode('utf-8'))
+
+    return openReader(reader_type, b, port_interface, c)
+
+##########################################################################
+
+def ReaderOpen():
+    openReader = uFR.ReaderOpen
+
+    return openReader()
+
+##########################################################################
+
+def ReaderUISignal(light, sound):
+    uiSignal = uFR.ReaderUISignal
+    uiSignal.argtypes = (c_ubyte, c_ubyte)
+    uiSignal.restype = c_uint
+    uiSignal(light, sound)
+
+##########################################################################
+
+def ReaderClose():
+    func = uFR.ReaderClose
+
+    return func()
+
+###########################f###############################################
+
+def GetCardIdEx(sak, uid, uid_size):
+    getCardIdEx = uFR.GetCardIdEx
+    getCardIdEx.argtypes = [ POINTER(c_ubyte), (c_ubyte * 11), POINTER(c_ubyte)]
+    getCardIdEx.restype = c_uint
+
+    return getCardIdEx(byref(sak), uid, byref(uid_size))
+
+##########################################################################
+
+def GetDlogicCardType(card_type):
+    getCardType = uFR.GetDlogicCardType
+    getCardType.argtypes = [ POINTER(c_ubyte)]
+    getCardType.restype = c_uint
+
+    return getCardType(byref(card_type))
+
+##########################################################################
+##########################################################################
+
+def nt4h_set_global_parameters(file_no, key_no, communication_mode):
+
+    nt4h_set_global_parametersFunc = uFR.nt4h_set_global_parameters
+    nt4h_set_global_parametersFunc.argtypes = [
+    c_ubyte,  # file_no (uint8_t)
+    c_ubyte,  # key_no (uint8_t)
+    c_ubyte   # communication_mode (uint8_t)
+    ]
+
+    nt4h_set_global_parameters.restype = c_uint
+
+    return nt4h_set_global_parametersFunc(file_no, key_no, communication_mode)
+##########################################################################
+def nt4h_change_sdm_file_settings_pk(aes_key_ext, file_no, key_no, curr_communication_mode, new_communication_mode, 
+                                    read_key_no, write_key_no, read_write_key_no, change_key_no,
+                                    uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+                                    meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+                                    uid_offset, read_ctr_offset, picc_data_offset, mac_input_offset,
+                                    enc_offset, enc_length, mac_offset, read_ctr_limit):
+
+    nt4h_change_sdm_file_settings_pkFunc = uFR.nt4h_change_sdm_file_settings_pk
+    nt4h_change_sdm_file_settings_pkFunc.argtypes = [
+        ctypes.POINTER(c_ubyte),   # uint8_t *aes_key_ext
+        c_ubyte,                  # uint8_t file_no
+        c_ubyte,                  # uint8_t key_no
+        c_ubyte,                  # uint8_t curr_communication_mode
+        c_ubyte,                  # uint8_t new_communication_mode
+
+        c_ubyte,                  # uint8_t read_key_no
+        c_ubyte,                  # uint8_t write_key_no
+        c_ubyte,                  # uint8_t read_write_key_no
+        c_ubyte,                  # uint8_t change_key_no
+
+        c_ubyte,                  # uint8_t uid_enable
+        c_ubyte,                  # uint8_t read_ctr_enable
+        c_ubyte,                  # uint8_t read_ctr_limit_enable
+        c_ubyte,                  # uint8_t enc_file_data_enable
+
+        c_ubyte,                  # uint8_t meta_data_key_no
+        c_ubyte,                  # uint8_t file_data_read_key_no
+        c_ubyte,                  # uint8_t read_ctr_key_no
+
+        c_uint,                   # uint8_t uid_offset
+        c_uint,                   # uint8_t read_ctr_offset
+        c_uint,                   # uint8_t picc_data_offset
+        c_uint,                   # uint8_t mac_input_offset
+
+        c_uint,                   # uint8_t enc_offset
+        c_uint,                   # uint8_t enc_length
+        c_uint,                   # uint8_t mac_offset
+        c_uint,                   # uint8_t read_ctr_limit
+    ]
+    nt4h_change_sdm_file_settings_pkFunc.restype = c_uint
+
+    return nt4h_change_sdm_file_settings_pkFunc(aes_key_ext, file_no, key_no, curr_communication_mode, new_communication_mode, 
+                                    read_key_no, write_key_no, read_write_key_no, change_key_no,
+                                    uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+                                    meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+                                    uid_offset, read_ctr_offset, picc_data_offset, mac_input_offset,
+                                    enc_offset, enc_length, mac_offset, read_ctr_limit)
+
+##########################################################################
+
+def nt4h_tt_change_sdm_file_settings_pk(aes_key_ext, file_no, key_no, curr_communication_mode, new_communication_mode, 
+                                    read_key_no, write_key_no, read_write_key_no, change_key_no,
+                                    uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+                                    meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+                                    uid_offset, read_ctr_offset, picc_data_offset, mac_input_offset,
+                                    enc_offset, enc_length, mac_offset, read_ctr_limit,
+                                    tt_status_enable, tt_status_offset):
+
+    nt4h_tt_change_sdm_file_settings_pkFunc = uFR.nt4h_tt_change_sdm_file_settings_pk
+    nt4h_tt_change_sdm_file_settings_pkFunc.argtypes = [
+        ctypes.POINTER(c_ubyte),  # uint8_t *aes_key_ext
+        c_ubyte,                  # uint8_t file_no
+        c_ubyte,                  # uint8_t key_no
+        c_ubyte,                  # uint8_t curr_communication_mode
+        c_ubyte,                  # uint8_t new_communication_mode
+
+        c_ubyte,                  # uint8_t read_key_no
+        c_ubyte,                  # uint8_t write_key_no
+        c_ubyte,                  # uint8_t read_write_key_no
+        c_ubyte,                  # uint8_t change_key_no
+
+        c_ubyte,                  # uint8_t uid_enable
+        c_ubyte,                  # uint8_t read_ctr_enable
+        c_ubyte,                  # uint8_t read_ctr_limit_enable
+        c_ubyte,                  # uint8_t enc_file_data_enable
+
+        c_ubyte,                  # uint8_t meta_data_key_no
+        c_ubyte,                  # uint8_t file_data_read_key_no
+        c_ubyte,                  # uint8_t read_ctr_key_no
+
+        c_uint,                   # uint8_t uid_offset
+        c_uint,                   # uint8_t read_ctr_offset
+        c_uint,                   # uint8_t picc_data_offset
+        c_uint,                   # uint8_t mac_input_offset
+
+        c_uint,                   # uint8_t enc_offset
+        c_uint,                   # uint8_t enc_length
+        c_uint,                   # uint8_t mac_offset
+        c_uint,                   # uint8_t read_ctr_limit
+
+        c_ubyte,                   # uint8_t tt_status_enable
+        c_uint,                   # uint8_t tt_status_offset
+    ]
+    nt4h_tt_change_sdm_file_settings_pkFunc.restype = c_uint
+
+    return nt4h_tt_change_sdm_file_settings_pkFunc(aes_key_ext, file_no, key_no, curr_communication_mode, new_communication_mode, 
+                                    read_key_no, write_key_no, read_write_key_no, change_key_no,
+                                    uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+                                    meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+                                    uid_offset, read_ctr_offset, picc_data_offset, mac_input_offset,
+                                    enc_offset, enc_length, mac_offset, read_ctr_limit,
+                                    tt_status_enable, tt_status_offset)
+
+##########################################################################
+
+def nt4h_tt_get_file_settings(file_no, file_type, comm_mode, sdm_enable, file_size,
+    read_key_no, write_key_no, read_write_key_no, change_key_no,
+    uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+    meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+    uid_offset, read_ctr_offset, picc_data_offset,
+    mac_input_offset, enc_offset, enc_length, mac_offset, read_ctr_limit,
+    tt_status_enable, tt_status_offset):
+    
+    nt4h_tt_get_file_settingsFunc = uFR.nt4h_tt_get_file_settings
+    nt4h_tt_get_file_settingsFunc.argtypes = [
+        c_ubyte,                  # uint8_t file_no
+
+        ctypes.POINTER(c_ubyte),  # uint8_t file_type
+        ctypes.POINTER(c_ubyte),  # uint8_t communication_mode
+        ctypes.POINTER(c_ubyte),  # uint8_t sdm_enable
+        ctypes.POINTER(c_uint),   # uint8_t file_size
+
+        ctypes.POINTER(c_ubyte),    # uint8_t read_key_no
+        ctypes.POINTER(c_ubyte),    # uint8_t write_key_no
+        ctypes.POINTER(c_ubyte),    # uint8_t read_write_key_no
+        ctypes.POINTER(c_ubyte),    # uint8_t change_key_no
+
+        ctypes.POINTER(c_ubyte),    # uint8_t uid_enable
+        ctypes.POINTER(c_ubyte),    # uint8_t read_ctr_enable
+        ctypes.POINTER(c_ubyte),    # uint8_t read_ctr_limit_enable
+        ctypes.POINTER(c_ubyte),    # uint8_t enc_file_data_enable
+
+        ctypes.POINTER(c_ubyte),    # uint8_t meta_data_key_no
+        ctypes.POINTER(c_ubyte),    # uint8_t file_data_read_key_no
+        ctypes.POINTER(c_ubyte),    # uint8_t read_ctr_key_no
+
+        ctypes.POINTER(c_uint),    # uint8_t uid_offset
+        ctypes.POINTER(c_uint),    # uint8_t read_ctr_offset
+        ctypes.POINTER(c_uint),    # uint8_t picc_data_offset
+        ctypes.POINTER(c_uint),    # uint8_t mac_input_offset
+        ctypes.POINTER(c_uint),    # uint8_t enc_offset
+        ctypes.POINTER(c_uint),    # uint8_t enc_length
+        ctypes.POINTER(c_uint),    # uint8_t mac_offset
+
+        ctypes.POINTER(c_uint),    # read_ctr_limit
+        ctypes.POINTER(c_ubyte),   # tt_status_enable
+        ctypes.POINTER(c_uint),    # tt_status_offset
+    ]
+
+    nt4h_tt_get_file_settingsFunc.restype = c_uint
+
+    return nt4h_tt_get_file_settingsFunc(file_no, file_type, comm_mode, sdm_enable, file_size,
+    read_key_no, write_key_no, read_write_key_no, change_key_no,
+    uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+    meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+    uid_offset, read_ctr_offset, picc_data_offset,
+    mac_input_offset, enc_offset, enc_length, mac_offset, read_ctr_limit,
+    tt_status_enable, tt_status_offset)
+
+##########################################################################
+
+def nt4h_check_sdm_mac(sdm_read_counter, uid, auth_key, mac_in_data, mac_in_len, sdm_mac):
+    nt4h_check_sdm_macFunc = uFR.nt4h_check_sdm_mac
+    nt4h_check_sdm_macFunc.argtypes = [
+        c_uint,                     # uint32_t sdm_read_counter
+        ctypes.POINTER(c_ubyte),    # uint8_t *uid
+        ctypes.POINTER(c_ubyte),    # uint8_t *auth_key
+        ctypes.POINTER(c_ubyte),    # uint8_t *mac_in_data
+        c_ubyte,                    # uint8_t mac_in_len
+        ctypes.POINTER(c_ubyte),   # const uint8_t *sdm_mac
+    ]
+    nt4h_check_sdm_macFunc.restype = c_uint
+    return nt4h_check_sdm_macFunc(sdm_read_counter, uid, auth_key, mac_in_data, mac_in_len, sdm_mac)
+
+##########################################################################
+
+def nt4h_change_key_pk(auth_key, key_no, new_key, old_key):
+    nt4h_change_key_pkFunc = uFR.nt4h_change_key_pk
+    nt4h_change_key_pkFunc.argtypes = [
+        ctypes.POINTER(c_ubyte),    # uint8_t *auth_key
+        c_uint,                     # uint8_t key_no
+        ctypes.POINTER(c_ubyte),    # uint8_t *old_key
+        ctypes.POINTER(c_ubyte),    # uint8_t *new_key
+    ]
+    nt4h_change_key_pkFunc.restype = c_uint
+    return nt4h_change_key_pkFunc(auth_key, key_no, new_key, old_key)
+
+##########################################################################
+
+def LinearWrite_PK(data, linear_address, length, bytes_written, auth_mode, key):
+    #UFR_STATUS DL_API LinearWrite_PK(IN const uint8_t *data, uint16_t linear_address, uint16_t length, VAR uint16_t *bytes_written,
+    #                                 uint8_t auth_mode, IN const uint8_t *key);
+
+    LinearWrite_PKFunc = uFR.LinearWrite_PK
+    LinearWrite_PKFunc.argtypes = [
+        ctypes.POINTER(c_ubyte),   # const uint8_t *data
+        c_uint16,                 # uint16_t linear_address
+        c_uint16,                 # uint16_t length
+        POINTER(c_uint16),        # uint16_t *bytes_written
+        c_ubyte,                  # uint8_t auth_mode
+        ctypes.POINTER(c_ubyte)   # const uint8_t *key
+    ]
+
+    LinearWrite_PKFunc.restype = c_uint
+    return LinearWrite_PKFunc(data, linear_address, length, byref(bytes_written), auth_mode, key)
+
+##########################################################################
+
+def LinearRead_PK(data, linear_address, length, bytes_written, auth_mode, key):
+    #UFR_STATUS DL_API LinearWrite_PK(IN const uint8_t *data, uint16_t linear_address, uint16_t length, VAR uint16_t *bytes_written,
+    #                                 uint8_t auth_mode, IN const uint8_t *key);
+
+    LinearRead_PKFunc = uFR.LinearRead_PK
+    LinearRead_PKFunc.argtypes = [
+        ctypes.POINTER(c_ubyte),   # const uint8_t *data
+        c_uint16,                 # uint16_t linear_address
+        c_uint16,                 # uint16_t length
+        POINTER(c_uint16),        # uint16_t *bytes_written
+        c_ubyte,                  # uint8_t auth_mode
+        ctypes.POINTER(c_ubyte)   # const uint8_t *key
+    ]
+
+    LinearRead_PKFunc.restype = c_uint
+    return LinearRead_PKFunc(data, linear_address, length, byref(bytes_written), auth_mode, key)
+
+####################################################################################################################################################
+
+def LinearRead(data, linear_address, length, bytes_written, auth_mode, key):
+    #UFR_STATUS DL_API LinearWrite_PK(IN const uint8_t *data, uint16_t linear_address, uint16_t length, VAR uint16_t *bytes_written,
+    #                                 uint8_t auth_mode, IN const uint8_t *key);
+
+    LinearReadFunc = uFR.LinearRead
+    LinearReadFunc.argtypes = [
+        ctypes.POINTER(c_ubyte),   # const uint8_t *data
+        c_uint16,                 # uint16_t linear_address
+        c_uint16,                 # uint16_t length
+        POINTER(c_uint16),        # uint16_t *bytes_read
+        c_ubyte,                  # uint8_t auth_mode
+        c_ubyte   # const uint8_t *key
+    ]
+
+    LinearReadFunc.restype = c_uint
+    return LinearReadFunc(data, linear_address, length, byref(bytes_written), auth_mode, key)
+##########################################################################
+##########################################################################
+##########################################################################
+def read_and_verify_sdm_data():
+    status = 0
+    global_file_no = c_ubyte(2)
+    global_key_no = c_ubyte(14) # NDEF for SDM must be set as 'Read Access - 14'
+    global_comm_mode = c_ubyte(0)
+
+    default_aes_key = (c_ubyte * 16)()
+    memset(default_aes_key, 0, ctypes.sizeof(default_aes_key))
+
+    file_no = c_ubyte(2)
+
+    file_type = c_ubyte(0)
+    sdm_enable = c_ubyte(0)
+    file_size = c_uint(0)
+
+    comm_mode = c_ubyte(0)
+
+    read_key_no = c_ubyte(0)
+    write_key_no = c_ubyte(0)
+    read_write_key_no = c_ubyte(0)
+    change_key_no = c_ubyte(0)
+
+    uid_enable = c_ubyte(0)
+    read_ctr_enable = c_ubyte(0)
+    read_ctr_limit_enable = c_ubyte(0)
+    enc_file_data_enable = c_ubyte(0)
+
+    meta_data_key_no = c_ubyte(0)
+    file_data_read_key_no = c_ubyte(0)
+    read_ctr_key_no = c_ubyte(0)
+
+    uid_offset = c_uint(0)
+    read_ctr_offset = c_uint(0)
+    picc_data_offset = c_uint(0)
+    mac_input_offset = c_uint(0)
+
+    enc_offset = c_uint(0)
+    enc_length = c_uint(0)
+    mac_offset = c_uint(0)
+    read_ctr_limit = c_uint(0)
+
+    tt_status_enable = c_ubyte(0)
+    tt_status_offset = c_uint(0)
+
+    status = nt4h_tt_get_file_settings(file_no, file_type, comm_mode, sdm_enable, file_size,
+            read_key_no, write_key_no, read_write_key_no, change_key_no,
+            uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+            meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+            uid_offset, read_ctr_offset, picc_data_offset,
+            mac_input_offset, enc_offset, enc_length, mac_offset, read_ctr_limit,
+            tt_status_enable, tt_status_offset)
+    status_str = "nt4h_tt_get_file_settings(): ", uFR_NT4H_Status2String(status)
+    print(status_str)
+    
+
+    if (status == 0):
+        #print("file_type: ", file_type)
+        #print("comm_mode: ", comm_mode)
+        #print("sdm_enable: ", sdm_enable)
+        #print("file_size: ", file_size)
+        #print("read_key_no: ", read_key_no)
+        #print("write_key_no: ", write_key_no)
+        #print("read_write_key_no: ", read_write_key_no)
+        #print("change_key_no: ", change_key_no)
+        #print("uid_enable: ", uid_enable)
+        #print("read_ctr_enable: ", read_ctr_enable)
+        #print("read_ctr_limit_enable: ", read_ctr_limit_enable)
+        #print("enc_file_data_enable: ", enc_file_data_enable)
+        #print("meta_data_key_no: ", meta_data_key_no)
+        #print("file_data_read_key_no: ", file_data_read_key_no)
+        #print("read_ctr_key_no: ", read_ctr_key_no)
+        print("uid_offset: ", uid_offset)
+        print("read_ctr_offset: ", read_ctr_offset)
+        #print("picc_data_offset: ", picc_data_offset)
+        #print("mac_input_offset: ", mac_input_offset)
+        #print("enc_offset: ", enc_offset)
+        #print("enc_length: ", enc_length)
+        print("mac_offset: ", mac_offset)
+        #print("read_ctr_limit: ", read_ctr_limit)
+        #print("tt_status_enable: ", tt_status_enable)
+        #print("tt_status_offset: ", tt_status_offset)
+    else:
+        return status
+    sdm_mode = (sdm_enable.value == 1) and (comm_mode.value == 0) and (read_key_no.value == 0x0E)
+    if (sdm_mode == 1):
+
+        status = nt4h_set_global_parameters(global_file_no, global_key_no, global_comm_mode)
+        status_str = "nt4h_set_global_parameters(): ", uFR_NT4H_Status2String(status)
+        print(status_str)
+
+        if (status != 0):
+            return status
+
+        data = (c_ubyte * 256)()
+        memset(data, 0, ctypes.sizeof(data))
+        read_len = c_uint16(188)
+        bytes_read = c_uint16()
+        auth_mode = c_ubyte(T4T_AUTHENTICATION["T4T_WITHOUT_PWD_AUTH"])
+        status = LinearRead(data, 0, read_len, bytes_read, auth_mode, 0)
+        status_str = "LinearRead_PK(): ", uFR_NT4H_Status2String(status)
+        print(status_str)
+        if (status != 0):
+            return status
+        
+        #print("Data:", ", ".join(f"0x{byte:02X}" for byte in data))
+        
+        sliced_uid_buffer = slice_c_ubyte_buffer(data, uid_offset.value, uid_offset.value + 14)
+        
+        hex_uid_string = ''.join(chr(b) for b in sliced_uid_buffer)
+        hex_uid_buffer = string_to_hex_buffer(hex_uid_string)
+        #print("hex_uid_buffer")
+        #print(hex_uid_buffer)
+
+        sliced_sdm_read_counter_buffer = slice_c_ubyte_buffer(data, read_ctr_offset.value, read_ctr_offset.value + 6)
+        hex_ctr_string = ''.join(chr(b) for b in sliced_sdm_read_counter_buffer)
+        sdm_read_counter = int(hex_ctr_string, 16)
+        #print(sdm_read_counter)
+
+        ascii_mac_in = (c_ubyte * 256)()
+        memset(ascii_mac_in, 0, ctypes.sizeof(ascii_mac_in))
+
+        mac_in_len = c_ubyte(0)
+
+        sliced_sdm_mac_buffer = slice_c_ubyte_buffer(data, mac_offset.value, mac_offset.value + 16)
+        sdm_mac_str = ''.join(chr(b) for b in sliced_sdm_mac_buffer)
+        sdm_mac_buffer = string_to_hex_buffer(sdm_mac_str)
+
+        status = nt4h_check_sdm_mac(sdm_read_counter, hex_uid_buffer, default_aes_key, ascii_mac_in, mac_in_len, sdm_mac_buffer)
+        status_str = "nt4h_check_sdm_mac(): ", uFR_NT4H_Status2String(status)
+        print(status_str)
+    else:
+        print("File is not in SDM mode.")
+    return status
+##########################################################################
+def log_to_file(uid_str, message, status=None):
+    """
+    Log messages to a file named with the card's UID.
+    
+    Args:
+        uid_str (str): Card UID used for filename
+        message (str): Message to log
+        status (int, optional): Status code if applicable
+    """
+    filename = f"{uid_str}.txt"
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    with open(filename, 'a') as f:
+        log_entry = f"[{timestamp}] {message}"
+        if status is not None:
+            log_entry += f" (Status: {uFR_NT4H_Status2String(status)})"
+        f.write(log_entry + "\n")
+        
+    # Still print to console for immediate feedback
+    print(message)
+
+##########################################################################
+T4T_AUTHENTICATION = {
+    "T4T_WITHOUT_PWD_AUTH": 0x60,
+    "T4T_PK_PWD_AUTH": 0x80,
+    "T4T_RKA_PWD_AUTH": 0x02,
+}
+##########################################################################
+def GetDllVersionStr():
+    GetDllVersionStrFunc = uFR.GetDllVersionStr
+    GetDllVersionStrFunc.restype = ctypes.c_char_p
+
+    return GetDllVersionStrFunc().decode('utf-8')
+##########################################################################
+def UFRStatus2String(status):
+    ufrStatus2String = uFR.UFR_Status2String
+    ufrStatus2String.argtypes = [ c_uint32 ]
+    ufrStatus2String.restype = ctypes.c_char_p
+
+    return ufrStatus2String(status).decode('utf-8')
+##########################################################################
+def uFR_NT4H_Status2String(status):
+    if status < 0xC0 or status > 0xCB:
+        return UFRStatus2String(status)
+    else:
+        nt4h_status = f"[0x{status:02X} ({status})] "
+        nt4h_status_dict = {
+            0xC0: 'NT4H_COMMAND_ABORTED',
+            0xC1: 'NT4H_LENGTH_ERROR',
+            0xC2: 'NT4H_PARAMETER_ERROR',
+            0xC3: 'NT4H_NO_SUCH_KEY',
+            0xC4: 'NT4H_PERMISSION_DENIED',
+            0xC5: 'NT4H_AUTHENTICATION_DELAY',
+            0xC6: 'NT4H_MEMORY_ERROR',
+            0xC7: 'NT4H_INTEGRITY_ERROR',
+            0xC8: 'NT4H_FILE_NOT_FOUND',
+            0xC9: 'NT4H_BOUNDARY_ERROR',
+            0xCA: 'NT4H_INVALID_MAC',
+            0xCB: 'NT4H_NO_CHANGES'
+        }
+        nt4h_status += nt4h_status_dict.get(status, '')
+        return nt4h_status
+##########################################################################
+def uid_to_string(uid, uid_size):
+    """
+    Convert a UID (c_ubyte array) to a string with colon-separated hex bytes.
+    
+    :param uid: A ctypes array of c_ubyte elements representing the UID.
+    :param uid_size: The size of the UID array.
+    :return: A colon-separated hex string representation of the UID.
+    """
+    uid_str = '-'.join(f'{uid[n]:02x}' for n in range(uid_size.value)).upper()
+    return uid_str
+##########################################################################
+def generate_random_aes_key_hex():
+    """
+    Generate a random 16-byte AES key and return it as a hex string.
+    
+    :return: A 32-character hexadecimal string representing the AES key.
+    """
+    key = os.urandom(16)  # Generate 16 random bytes
+    return key.hex().upper()  # Convert to a hexadecimal string
+##########################################################################
+# Function to create a slice of the buffer
+def slice_c_ubyte_buffer(buffer, start, end):
+    if start < 0 or end > len(buffer) or start > end:
+        raise ValueError("Invalid slice range")
+    size = end - start
+    return (c_ubyte * size)(*buffer[start:end])
+##########################################################################
+def buffer_to_ascii_string(buffer):
+    """Convert an ASCII buffer to a string, replacing non-printable characters with '.'."""
+    return ''.join(chr(b) if 32 <= b <= 126 else '.' for b in buffer)
+##########################################################################
+
+old_uid = (c_ubyte * 11)()
+def isCardInField():
+    
+    uid = (c_ubyte * 11)()
+    sak = c_ubyte()
+    uid_size = c_ubyte()
+
+    status = GetCardIdEx(sak, uid, uid_size)
+    if (status == 0):
+        uid_str = str()
+        card_type = c_ubyte()
+
+        same_card_in_field = True
+
+        for n in range(uid_size.value):
+            if (uid[n] != old_uid[n]):
+                same_card_in_field = False
+                break
+
+        if (same_card_in_field):
+            return False
+        else:
+            for n in range(uid_size.value):
+                old_uid[n] = uid[n]
+
+        for n in range(uid_size.value):
+            uid_str += '%0.2x' % uid[n] + ':'
+        
+        status = GetDlogicCardType(card_type)
+
+        if (status == 0) and (uid_size.value > 0):
+            print("[ CARD_UID: " + uid_str.upper()[:-1] + " | CARD_TYPE: " + card_types.DLOGIC_CARD_TYPE[card_type.value] + " ]")
+            return True
+        else:
+            memset(old_uid, 0, ctypes.sizeof(old_uid))
+            return False
+    else: 
+        memset(old_uid, 0, ctypes.sizeof(old_uid))
+        return False
+##########################################################################
+def char_to_code(char):
+        return ord(char)
+##########################################################################
+def str_to_hex(string):
+    return [ord(c) for c in string]
+##########################################################################
+# Convert the string back into a hex buffer
+def string_to_hex_buffer(hex_string):
+    if len(hex_string) % 2 != 0:
+        raise ValueError("Hex string length must be even")
+    return (c_ubyte * (len(hex_string) // 2))(
+        *(int(hex_string[i:i+2], 16) for i in range(0, len(hex_string), 2))
+    )
+##########################################################################
+
+def list_to_ascii_string(data_list):
+    """
+    Converts a list of integers to a string using ASCII mapping.
+    
+    :param data_list: List of integers representing ASCII values.
+    :return: String decoded from ASCII values.
+    """
+    # Filter out zeros if they are not part of the intended output
+    filtered_list = filter(lambda x: x != 0, data_list)
+    return ''.join(map(chr, filtered_list))
+
+def form_sdm_ndef_payload(url):
+    # Initial NDEF payload setup
+    ndef_with_header = [0x00, 0x00, 0xD1, 0x01, 0x00, 0x55, 0x00]
+    ndef_header_len = len(ndef_with_header)
+    total_ndef_len = 0
+
+    # Parse URI and add to NDEF payload
+    ndef_buffer = str_to_hex(url)
+    ndef_with_header.extend(ndef_buffer)
+    ndef_with_header.append(char_to_code('?'))
+    total_ndef_len = len(ndef_with_header)
+    print(total_ndef_len)
+
+    uid_offset = 0
+    read_ctr_offset = 0
+    mac_offset = 0
+
+    # add UID placeholder data to buffer
+    ndef_with_header.extend([char_to_code(c) for c in "uid="])
+    ndef_with_header.extend([0] * 14)
+    uid_offset = total_ndef_len + 4
+    total_ndef_len += 18
+    #print("Total len after UID: ")
+    #print(total_ndef_len)
+
+    ndef_with_header.append(char_to_code('&'))
+    ndef_with_header.extend([char_to_code(c) for c in "ctr="])
+    ndef_with_header.extend([0] * 6)
+    read_ctr_offset = total_ndef_len + 5
+    total_ndef_len += 11
+    #print("Total len after CTR: ")
+    #print(total_ndef_len)
+    
+    # add SDM Counter placeholder data to buffer
+    ndef_with_header.append(char_to_code('&'))
+    ndef_with_header.extend([char_to_code(c) for c in "cmac="])
+    ndef_with_header.extend([0] * 16)
+    mac_offset = total_ndef_len + 6
+    total_ndef_len += 22
+    #print("Total len after CMAC: ")
+    #print(total_ndef_len)
+
+    # Update NDEF length fields in header bytes
+    # ndef_with_header[1] = total ndef message length
+    # ndef_with_header[4] = ndef record length
+    ndef_with_header[1] = (total_ndef_len - ndef_header_len) + 5
+    ndef_with_header[4] = (total_ndef_len - ndef_header_len) + 1
+
+    #print(total_ndef_len)
+
+    result = {}
+    result["sdm_payload"] = ndef_with_header
+    result["sdm_payload_length"] = total_ndef_len
+    result["uid_offset"] = uid_offset
+    result["read_ctr_offset"] = read_ctr_offset
+    result["mac_offset"] = mac_offset
+
+    return result
+
+def add_additional_ndef_payload_parameter(sdm_payload, param_name, param_value):
+    #print("Payload:", ", ".join(f"0x{byte:02X}" for byte in sdm_payload))
+    ndef_message_length = sdm_payload[1]
+    ndef_record_length = sdm_payload[4]
+
+    #print("NDEF Message length", ndef_message_length)
+    #print("NDEF Record length", ndef_record_length)
+    if param_name or param_value:
+        sdm_payload.append(char_to_code('&'))
+        sdm_payload.extend([char_to_code(c) for c in param_name])
+        sdm_payload.append(char_to_code('='))
+        sdm_payload.extend([char_to_code(c) for c in param_value])
+
+        extended_len = len(param_name) + len(param_value) + 2
+
+        sdm_payload[1] = ndef_message_length + extended_len
+        sdm_payload[4] = ndef_record_length + extended_len
+
+    # Storing the result in a dictionary
+    result = {}
+    result["extended_payload"] = sdm_payload
+    result["extended_payload_length"] = len(sdm_payload)
+
+    return result
+##########################################################################
+if __name__ == '__main__':
+    print("---------------------------------------------")
+    print("https://www.d-logic.com/nfc-rfid-reader-sdk/")
+    print("---------------------------------------------")
+    print("NTAG424 DNA Programmer, version 1.0")
+    print("---------------------------------------------")
+
+    print("Trying to establish communication with the reader...")
+
+    print(f"[DLL_VERSION = {GetDllVersionStr()}]")
+
+    status = ReaderOpen()
+    status_str = "ReaderOpen(): " + uFR_NT4H_Status2String(status)
+    print(status_str)
+    if (status != 0):
+        exit(1)
+    
+    print("> PROGRAMMING BEGIN. ")
+
+    print("> 1. Get card UID")
+    uid = (c_ubyte * 11)()
+    sak = c_ubyte()
+    uid_size = c_ubyte()
+    card_uid_str = str()
+
+    status = GetCardIdEx(sak, uid, uid_size)
+    if (status == 0):
+        card_uid_str = uid_to_string(uid, uid_size)
+        log_to_file(card_uid_str, f"Card UID successfully retrieved: {card_uid_str}")
+    else:
+        print("Failed to retrieve card UID. Exiting...")
+        exit(1)
+    
+    print("> 2. Form SDM NDEF Payload...")
+    uri = "http://by6od-j4aaa-aaaaa-qaadq-cai.localhost:4943/page1.html"
+    formed_result = form_sdm_ndef_payload(uri)
+    sdm_payload = formed_result["sdm_payload"]
+    sdm_payload_length = formed_result["sdm_payload_length"]
+    uid_offset = formed_result["uid_offset"]
+    read_ctr_offset = formed_result["read_ctr_offset"]
+    mac_offset = formed_result["mac_offset"]
+
+    sdm_payload_str = buffer_to_ascii_string(sdm_payload)
+    log_to_file(card_uid_str, f"    Payload [ASCII] = {sdm_payload_str}")
+
+    print("> 3. Add additional parameter to NDEF outside of SDM")
+    
+    extended_payload_result = add_additional_ndef_payload_parameter(sdm_payload, "", "")
+
+    extended_payload = extended_payload_result["extended_payload"]
+    extended_payload_length = extended_payload_result["extended_payload_length"]
+    log_to_file(card_uid_str, "Additional NDEF parameters added")
+
+    print("> 4. Write SDM payload")
+    file_no = c_ubyte(2)                # File number
+    key_no = c_ubyte(0)                 # Write key no
+    communication_mode = c_ubyte(0)     # Communication mode
+    status = nt4h_set_global_parameters(file_no, key_no, communication_mode)
+
+    default_aes_key = (c_ubyte * 16)()
+    memset(default_aes_key, 0, ctypes.sizeof(default_aes_key))
+    write_data_buffer = (c_ubyte * len(extended_payload))(*extended_payload)
+    write_len = c_uint16(extended_payload_length)
+    bytes_written = c_uint16()
+    auth_mode = c_ubyte(T4T_AUTHENTICATION["T4T_PK_PWD_AUTH"])
+    
+    status = LinearWrite_PK(write_data_buffer, 0, write_len, bytes_written, auth_mode, default_aes_key)
+    if (status == 0):
+        log_to_file(card_uid_str, "NDEF Message written successfully")
+    else:
+        log_to_file(card_uid_str, "Failed to write NDEF message", status)
+        exit(1)
+
+    print("> 5. Change SDM settings")
+    communication_mode = c_ubyte(3)
+    new_communication_mode = c_ubyte(0)
+
+    read_key_no = c_ubyte(0x0E)
+    write_key_no = c_ubyte(0)
+    read_write_key_no = c_ubyte(0)
+    change_key_no = c_ubyte(0)
+
+    uid_enable = c_ubyte(1)
+    read_ctr_enable = c_ubyte(1)
+    read_ctr_limit_enable = c_ubyte(0)
+    enc_file_data_enable = c_ubyte(0)
+
+    meta_data_key_no = c_ubyte(0x0E)
+    file_data_read_key_no = c_ubyte(0)
+    read_ctr_key_no = c_ubyte(0)
+
+    picc_data_offset = c_uint(0)
+    mac_input_offset = c_uint(mac_offset)
+    enc_offset = c_uint(0)
+    enc_length = c_uint(0)
+    read_ctr_limit = c_uint(0)
+
+    tt_status_enable = c_ubyte(0)
+    tt_status_offset = c_uint(0)
+
+    status = nt4h_tt_change_sdm_file_settings_pk(default_aes_key, file_no, key_no, communication_mode, new_communication_mode, 
+                            read_key_no, write_key_no, read_write_key_no, change_key_no,
+                            uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+                            meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+                            uid_offset, read_ctr_offset, picc_data_offset, mac_input_offset,
+                            enc_offset, enc_length, mac_offset, read_ctr_limit, 
+                            tt_status_enable, tt_status_offset)
+    if (status == 0):
+        log_to_file(card_uid_str, "SDM settings set successfully")
+    else:
+        log_to_file(card_uid_str, "Failed to set SDM settings", status)
+        exit(1)
+
+    """
+    print(">>>> Try reading data...")
+    if (status == 0):
+        log_to_file(card_uid_str, "SDM data verified successfully")
+    else:
+        log_to_file(card_uid_str, "Failed to verify SDM data", status)
+        exit(1)
+    """
+    
+    # print("6. Change Master key")
+    # new_aes_key_str = generate_random_aes_key_hex()
+    # #print(f"Randomized key is: {new_aes_key_str}")
+    # new_aes_key = string_to_hex_buffer(new_aes_key_str)
+    
+    # status = nt4h_change_key_pk(default_aes_key, 0, new_aes_key, default_aes_key)
+    # if (status == 0):
+    #     log_to_file(card_uid_str, f"Card master key changed successfully to: {new_aes_key_str}")
+    # else:
+    #     log_to_file(card_uid_str, "Failed to change card master key", status)
+    #     exit(1)
+    
+    ReaderClose()
+
+================
+File: scripts/setup_route.py
+================
+#!/usr/bin/env python3
+import subprocess
+import argparse
+import json
+from typing import Optional, Tuple
+from ctypes import c_ubyte, c_uint, c_uint16, byref, memset, sizeof
+import ntag424_programmer as ntp
+
+def get_canister_name_from_dfx() -> Optional[str]:
+    """Read dfx.json and get the canister name."""
+    try:
+        with open('dfx.json', 'r') as f:
+            dfx_config = json.load(f)
+            for canister_name in dfx_config.get('canisters', {}):
+                if canister_name != 'internet_identity':
+                    return canister_name
+        return None
+    except Exception as e:
+        print(f"Error reading dfx.json: {str(e)}")
+        return None
+
+def run_command(command: str) -> Tuple[int, str, str]:
+    """Run a shell command and return its exit code, stdout, and stderr."""
+    process = subprocess.Popen(
+        command,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    stdout, stderr = process.communicate()
+    return process.returncode, stdout, stderr
+
+def setup_route_and_program(canister_id: str, page: str, params: str = None, use_random_key: bool = False, ic_mode: bool = False) -> bool:
+    """Setup protected route and program NFC card."""
+    try:
+        # Get canister name from dfx.json
+        canister_name = get_canister_name_from_dfx()
+        if not canister_name:
+            print("Error: Could not find canister name in dfx.json")
+            return False
+        print(f"Using canister name from dfx.json: {canister_name}")
+
+        # Form the URI for the card based on environment
+        if ic_mode:
+            uri = f"https://{canister_id}.raw.icp0.io/{page}"
+        else:
+            uri = f"http://{canister_id}.localhost:4943/{page}"
+        print(f"Using URI: {uri}")
+
+        # Start card programming following ntag424_programmer.py logic
+        status = ntp.ReaderOpen()
+        if status != 0:
+            print(f"Error opening reader: {ntp.uFR_NT4H_Status2String(status)}")
+            return False
+
+        # Get card UID (following ntag424_programmer.py logic)
+        uid = (c_ubyte * 11)()
+        sak = c_ubyte()
+        uid_size = c_ubyte()
+        status = ntp.GetCardIdEx(sak, uid, uid_size)
+        if status != 0:
+            print(f"Error getting card ID: {ntp.uFR_NT4H_Status2String(status)}")
+            return False
+            
+        card_uid = ''.join(f'{uid[n]:02X}' for n in range(uid_size.value))
+        print(f"Successfully got card UID: {card_uid}")
+
+        # Form SDM NDEF Payload
+        formed_result = ntp.form_sdm_ndef_payload(uri)
+        print(f"Formed NDEF payload")
+
+        # Get extended payload
+        extended_payload_result = ntp.add_additional_ndef_payload_parameter(
+            formed_result["sdm_payload"],
+            params.split('=')[0] if params and '=' in params else "",
+            params.split('=')[1] if params and '=' in params else ""
+        )
+
+        # Setup for writing
+        default_key = (c_ubyte * 16)()
+        memset(default_key, 0, sizeof(default_key))
+
+        # Write SDM payload
+        file_no = c_ubyte(2)
+        key_no = c_ubyte(0)
+        communication_mode = c_ubyte(0)
+        status = ntp.nt4h_set_global_parameters(file_no, key_no, communication_mode)
+        if status != 0:
+            print(f"Error setting global parameters: {ntp.uFR_NT4H_Status2String(status)}")
+            return False
+
+        write_data_buffer = (c_ubyte * len(extended_payload_result["extended_payload"]))(*extended_payload_result["extended_payload"])
+        write_len = c_uint16(extended_payload_result["extended_payload_length"])
+        bytes_written = c_uint16()
+        auth_mode = c_ubyte(ntp.T4T_AUTHENTICATION["T4T_PK_PWD_AUTH"])
+
+        status = ntp.LinearWrite_PK(write_data_buffer, 0, write_len, bytes_written, auth_mode, default_key)
+        if status != 0:
+            print(f"Error writing NDEF message: {ntp.uFR_NT4H_Status2String(status)}")
+            return False
+        print("NDEF Message written successfully")
+
+        # Change SDM settings
+        communication_mode = c_ubyte(3)
+        new_communication_mode = c_ubyte(0)
+        read_key_no = c_ubyte(0x0E)
+        write_key_no = c_ubyte(0)
+        read_write_key_no = c_ubyte(0)
+        change_key_no = c_ubyte(0)
+        uid_enable = c_ubyte(1)
+        read_ctr_enable = c_ubyte(1)
+        read_ctr_limit_enable = c_ubyte(0)
+        enc_file_data_enable = c_ubyte(0)
+        meta_data_key_no = c_ubyte(0x0E)
+        file_data_read_key_no = c_ubyte(0)
+        read_ctr_key_no = c_ubyte(0)
+        picc_data_offset = c_uint(0)
+        mac_input_offset = c_uint(formed_result["mac_offset"])
+        enc_offset = c_uint(0)
+        enc_length = c_uint(0)
+        read_ctr_limit = c_uint(0)
+        tt_status_enable = c_ubyte(0)
+        tt_status_offset = c_uint(0)
+
+        status = ntp.nt4h_tt_change_sdm_file_settings_pk(
+            default_key, file_no, key_no, communication_mode, new_communication_mode,
+            read_key_no, write_key_no, read_write_key_no, change_key_no,
+            uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
+            meta_data_key_no, file_data_read_key_no, read_ctr_key_no,
+            formed_result["uid_offset"], formed_result["read_ctr_offset"], 
+            picc_data_offset, mac_input_offset,
+            enc_offset, enc_length, formed_result["mac_offset"], read_ctr_limit,
+            tt_status_enable, tt_status_offset
+        )
+        if status != 0:
+            print(f"Error setting SDM settings: {ntp.uFR_NT4H_Status2String(status)}")
+            return False
+        print("SDM settings set successfully")
+
+        if use_random_key:
+            new_key_str = ntp.generate_random_aes_key_hex()
+            new_key = ntp.string_to_hex_buffer(new_key_str)
+            status = ntp.nt4h_change_key_pk(default_key, 0, new_key, default_key)
+            if status != 0:
+                print(f"Error changing master key: {ntp.uFR_NT4H_Status2String(status)}")
+                return False
+            print(f"Master key changed successfully to: {new_key_str}")
+            cmd = f'python3 scripts/hashed_cmacs.py -k {new_key_str} -u {card_uid} -c 50 -o cmacs.json'
+        else:
+            # Generate CMACs with default key
+            cmd = f'python3 scripts/hashed_cmacs.py -k 00000000000000000000000000000000 -u {card_uid} -c 50 -o cmacs.json'
+        exit_code, stdout, stderr = run_command(cmd)
+        if exit_code != 0:
+            print(f"Error generating CMACs: {stderr}")
+            return False
+        print("Generated CMACs successfully")
+
+        # Add --ic flag to dfx calls when in IC mode
+        ic_flag = "--ic " if ic_mode else ""
+        
+        cmd = f'dfx canister call {ic_flag}{canister_name} add_protected_route \'("{page}")\''
+        exit_code, stdout, stderr = run_command(cmd)
+        if exit_code != 0:
+            print(f"Error adding protected route: {stderr}")
+            return False
+        print("Added protected route successfully")
+
+        # Pass the ic_mode flag to batch_cmacs.py
+        ic_flag_param = "--ic" if ic_mode else ""
+        cmd = f'python3 scripts/batch_cmacs.py cmacs.json {canister_name} {page} {ic_flag_param}'
+        exit_code, stdout, stderr = run_command(cmd)
+        if exit_code != 0:
+            print(f"Error uploading CMACs: {stderr}")
+            return False
+        print("Uploaded CMACs successfully")
+
+        # Invalidate cache
+        cmd = f'dfx canister call {ic_flag}{canister_name} invalidate_cache'
+        exit_code, stdout, stderr = run_command(cmd)
+        if exit_code != 0:
+            print(f"Error invalidating cache: {stderr}")
+            return False
+        print("Invalidated cache successfully")
+
+        return True
+
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return False
+    finally:
+        ntp.ReaderClose()
+
+def main():
+    parser = argparse.ArgumentParser(description='Program NFC card and set up protected route')
+    parser.add_argument('canister_id', help='The canister ID')
+    parser.add_argument('page', help='The page to protect (e.g., page1.html)')
+    parser.add_argument('--random-key', action='store_true', 
+                       help='Generate and use a random key instead of default')
+    parser.add_argument('--params', help='Additional query parameters (e.g., param1=value1)')
+    parser.add_argument('--ic', action='store_true',
+                       help='Use IC production mode (connects to ICP network instead of local replica)')
+    
+    args = parser.parse_args()
+    
+    if setup_route_and_program(args.canister_id, args.page, args.params, args.random_key, args.ic):
+        print("\nSetup completed successfully!")
+    else:
+        print("\nSetup failed!")
+
+if __name__ == "__main__":
+    main()
+
+================
+File: src/backend/main.mo
+================
+import Server "mo:server";
+import Text "mo:base/Text";
+import Nat "mo:base/Nat";
+import Assets "mo:assets";
+import T "mo:assets/Types";
+import Cycles "mo:base/ExperimentalCycles";
+import Principal "mo:base/Principal";
+import Routes "routes";
+import Blob "mo:base/Blob";
+
+shared ({ caller = creator }) actor class () = this {
+
+  stable let routesState = Routes.init();
+  let routes_storage = Routes.RoutesStorage(routesState);
+
+  public shared ({ caller }) func add_protected_route(path : Text) : async () {
+    assert (caller == creator);
+    ignore routes_storage.addProtectedRoute(path);
+  };
+
+  public shared ({ caller }) func update_route_cmacs(path : Text, new_cmacs : [Text]) : async () {
+    assert (caller == creator);
+    ignore routes_storage.updateRouteCmacs(path, new_cmacs);
+  };
+
+  public shared ({ caller }) func append_route_cmacs(path : Text, new_cmacs : [Text]) : async () {
+    assert (caller == creator);
+    ignore routes_storage.appendRouteCmacs(path, new_cmacs);
+  };
+
+  public query func get_route_protection(path : Text) : async ?Routes.ProtectedRoute {
+    routes_storage.getRoute(path);
+  };
+
+  public query func get_route_cmacs(path : Text) : async [Text] {
+    routes_storage.getRouteCmacs(path);
+  };
+
+  public query ({ caller }) func whoAmI() : async Principal {
+    return caller;
+  };
+
+  public query func get_cycle_balance() : async Nat {
+    return Cycles.balance();
+  };
+
+  // SERVER CODE
+  type Request = Server.Request;
+  type Response = Server.Response;
+  type HttpRequest = Server.HttpRequest;
+  type HttpResponse = Server.HttpResponse;
+  type ResponseClass = Server.ResponseClass;
+
+  stable var serializedEntries : Server.SerializedEntries = ([], [], [creator]);
+  var server = Server.Server({ serializedEntries });
+  let assets = server.assets;
+
+  public shared ({ caller }) func store(
+    arg : {
+      key : Assets.Key;
+      content_type : Text;
+      content_encoding : Text;
+      content : Blob;
+      sha256 : ?Blob;
+    }
+  ) : async () {
+    server.store({ caller; arg });
+  };
+
+  public query func http_request(req : HttpRequest) : async HttpResponse {
+
+    if (routes_storage.isProtectedRoute(req.url)) {
+      return {
+        status_code = 426;
+        headers = [];
+        body = Blob.fromArray([]);
+        streaming_strategy = null;
+        upgrade = ?true;
+      };
+    };
+
+    server.http_request(req);
+
+  };
+
+  public func http_request_update(req : HttpRequest) : async HttpResponse {
+
+    // Check each protected route
+    let routes_array = routes_storage.listProtectedRoutes();
+    for ((path, protection) in routes_array.vals()) {
+      if (Text.contains(req.url, #text path)) {
+        let hasAccess = routes_storage.verifyRouteAccess(path, req.url);
+        let new_request = {
+          url = if (hasAccess) {
+            "/" # path;
+          } else {
+            "/edge.html";
+          };
+          method = req.method;
+          body = req.body;
+          headers = req.headers;
+        };
+        return await server.http_request_update(new_request);
+      };
+    };
+
+    await server.http_request_update(req);
+  };
+
+  public func invalidate_cache() : async () {
+    server.empty_cache();
+  };
+
+  system func preupgrade() {
+    serializedEntries := server.entries();
+
+  };
+
+  system func postupgrade() {
+    ignore server.cache.pruneAll();
+
+  };
+
+  public query func list(arg : {}) : async [T.AssetDetails] {
+    assets.list(arg);
+  };
+
+  public query func get(
+    arg : {
+      key : T.Key;
+      accept_encodings : [Text];
+    }
+  ) : async ({
+    content : Blob;
+    content_type : Text;
+    content_encoding : Text;
+    total_length : Nat;
+    sha256 : ?Blob;
+  }) {
+    assets.get(arg);
+  };
+
+  public shared ({ caller }) func create_batch(arg : {}) : async ({
+    batch_id : T.BatchId;
+  }) {
+    assets.create_batch({
+      caller;
+      arg;
+    });
+  };
+
+  public shared ({ caller }) func create_chunk(
+    arg : {
+      batch_id : T.BatchId;
+      content : Blob;
+    }
+  ) : async ({
+    chunk_id : T.ChunkId;
+  }) {
+    assets.create_chunk({
+      caller;
+      arg;
+    });
+  };
+
+  public shared ({ caller }) func commit_batch(args : T.CommitBatchArguments) : async () {
+    assets.commit_batch({
+      caller;
+      args;
+    });
+  };
+
+  public shared ({ caller }) func create_asset(arg : T.CreateAssetArguments) : async () {
+    assets.create_asset({
+      caller;
+      arg;
+    });
+  };
+
+  public shared ({ caller }) func set_asset_content(arg : T.SetAssetContentArguments) : async () {
+    assets.set_asset_content({
+      caller;
+      arg;
+    });
+  };
+
+  public shared ({ caller }) func unset_asset_content(args : T.UnsetAssetContentArguments) : async () {
+    assets.unset_asset_content({
+      caller;
+      args;
+    });
+  };
+
+  public shared ({ caller }) func delete_asset(args : T.DeleteAssetArguments) : async () {
+    assets.delete_asset({
+      caller;
+      args;
+    });
+  };
+
+  public shared ({ caller }) func clear(args : T.ClearArguments) : async () {
+    assets.clear({
+      caller;
+      args;
+    });
+  };
+
+  public type StreamingCallbackToken = {
+    key : Text;
+    content_encoding : Text;
+    index : Nat;
+    sha256 : ?Blob;
+  };
+
+  public type StreamingCallbackHttpResponse = {
+    body : Blob;
+    token : ?StreamingCallbackToken;
+  };
+
+  public query func http_request_streaming_callback(token : T.StreamingCallbackToken) : async StreamingCallbackHttpResponse {
+    assets.http_request_streaming_callback(token);
+  };
+
+};
+
+================
+File: src/backend/routes.mo
+================
+import Text "mo:base/Text";
+import HashMap "mo:base/HashMap";
+import Iter "mo:base/Iter";
+import Array "mo:base/Array";
+import Option "mo:base/Option";
+import Scan "scan";
+
+module {
+    public type ProtectedRoute = {
+        path : Text;
+        cmacs_ : [Text];
+        scan_count_ : Nat;
+    };
+
+    public type State = {
+        var protected_routes : [(Text, ProtectedRoute)];
+    };
+
+    public func init() : State = {
+        var protected_routes = [];
+    };
+
+    public class RoutesStorage(state : State) {
+        private var routes = HashMap.fromIter<Text, ProtectedRoute>(
+            state.protected_routes.vals(),
+            state.protected_routes.size(),
+            Text.equal,
+            Text.hash,
+        );
+
+        public func addProtectedRoute(path : Text) : Bool {
+            if (Option.isNull(routes.get(path))) {
+                let new_route : ProtectedRoute = {
+                    path;
+                    cmacs_ = [];
+                    scan_count_ = 0;
+                };
+                routes.put(path, new_route);
+                updateState();
+                true;
+            } else {
+                false;
+            };
+        };
+
+        public func updateRouteCmacs(path : Text, new_cmacs : [Text]) : Bool {
+            switch (routes.get(path)) {
+                case (?existing) {
+                    routes.put(
+                        path,
+                        {
+                            path = existing.path;
+                            cmacs_ = new_cmacs;
+                            scan_count_ = existing.scan_count_;
+                        },
+                    );
+                    updateState();
+                    true;
+                };
+                case null {
+                    false;
+                };
+            };
+        };
+
+        public func appendRouteCmacs(path : Text, new_cmacs : [Text]) : Bool {
+            switch (routes.get(path)) {
+                case (?existing) {
+                    routes.put(
+                        path,
+                        {
+                            path = existing.path;
+                            cmacs_ = Array.append(existing.cmacs_, new_cmacs);
+                            scan_count_ = existing.scan_count_;
+                        },
+                    );
+                    updateState();
+                    true;
+                };
+                case null {
+                    false;
+                };
+            };
+        };
+
+        public func getRoute(path : Text) : ?ProtectedRoute {
+            routes.get(path);
+        };
+
+        public func getRouteCmacs(path : Text) : [Text] {
+            switch (routes.get(path)) {
+                case (?route) {
+                    route.cmacs_;
+                };
+                case null { [] };
+            };
+        };
+
+        public func updateScanCount(path : Text, new_count : Nat) : Bool {
+            switch (routes.get(path)) {
+                case (?existing) {
+                    routes.put(
+                        path,
+                        {
+                            path = existing.path;
+                            cmacs_ = existing.cmacs_;
+                            scan_count_ = new_count;
+                        },
+                    );
+                    updateState();
+                    true;
+                };
+                case null {
+                    false;
+                };
+            };
+        };
+
+        public func verifyRouteAccess(path : Text, url : Text) : Bool {
+            switch (routes.get(path)) {
+                case (?route) {
+                    let counter = Scan.scan(route.cmacs_, url, route.scan_count_);
+                    if (counter > 0) {
+                        ignore updateScanCount(path, counter);
+                        true;
+                    } else {
+                        false;
+                    };
+                };
+                case null {
+                    false;
+                };
+            };
+        };
+
+        public func listProtectedRoutes() : [(Text, ProtectedRoute)] {
+            Iter.toArray(routes.entries());
+        };
+
+        public func isProtectedRoute(url : Text) : Bool {
+            Option.isSome(Array.find<(Text, ProtectedRoute)>(
+                Iter.toArray(routes.entries()),
+                func((path, _)) : Bool {
+                    Text.contains(url, #text path);
+                },
+            ));
+        };
+
+        private func updateState() {
+            state.protected_routes := Iter.toArray(routes.entries());
+        };
+
+        public func getState() : State {
+            state;
+        };
+    };
+};
+
+================
+File: src/backend/scan.mo
+================
+import Text "mo:base/Text";
+import Nat "mo:base/Nat";
+import Array "mo:base/Array";
+import Iter "mo:base/Iter";
+import Char "mo:base/Char";
+import Nat8 "mo:base/Nat8";
+import Nat32 "mo:base/Nat32";
+import Sha "sha";
+
+module {
+    public func hexToNat(hexString: Text) : Nat {
+        var result : Nat = 0;
+        for (char in Text.toIter(hexString)) {
+            if (Char.toNat32(char) >= Char.toNat32('0') and Char.toNat32(char) <= Char.toNat32( '9')) {
+                result := result * 16 + (Nat32.toNat(Char.toNat32(char)) - 48);
+            }
+            else if (Char.toNat32(char) >= Char.toNat32('A') and Char.toNat32(char) <= Char.toNat32( 'F')) {
+                result := result * 16 + (Nat32.toNat(Char.toNat32(char)) - 55);
+            }
+            else if (Char.toNat32(char) >= Char.toNat32('a') and Char.toNat32(char) <= Char.toNat32('f')) {
+                result := result * 16 + (Nat32.toNat(Char.toNat32(char)) - 87);
+            }
+            else {
+                assert(false);
+            }
+        };
+        return result;
+    };
+
+    public func subText(value : Text, indexStart : Nat, indexEnd : Nat) : Text {
+        if (indexStart == 0 and indexEnd >= value.size()) {
+            return value;
+        }
+        else if (indexStart >= value.size()) {
+            return "";
+        };
+        
+        var indexEndValid = indexEnd;
+        if (indexEnd > value.size()) {
+            indexEndValid := value.size();
+        };
+
+        var result : Text = "";
+        var iter = Iter.toArray<Char>(Text.toIter(value));
+        for (index in Iter.range(indexStart, indexEndValid - 1)) {
+            result := result # Char.toText(iter[index]);
+        };
+
+        result;
+    };
+
+    public func scan(cmacs: [Text], url : Text, scan_count : Nat) : Nat {
+        let full_query = Iter.toArray(Text.split(url, #char '?'));
+        if (full_query.size() != 2) {
+            return 0;
+        };
+
+        let queries = Iter.toArray(Text.split(full_query[1], #char '&'));
+
+        // if (queries.size() != 3) {
+        //     return 0;
+        // };
+
+        if (queries.size() != 3 and queries.size() != 4) {
+             return 0;
+        };
+
+        let cmac_query = Iter.toArray(Text.split(queries[2], #char '='));
+        let counter_query = Iter.toArray(Text.split(queries[1], #char '='));
+
+        if (cmac_query.size() != 2 or counter_query.size() != 2 or cmac_query[0] != "cmac" or counter_query[0] != "ctr") {
+            return 0;
+        };
+        
+        var counter = hexToNat(counter_query[1]);
+
+        let sha = Sha.sha256(Array.map(Text.toArray(cmac_query[1]), func (c : Char) : Nat8 { 
+            Nat8.fromNat(Nat32.toNat(Char.toNat32(c)))
+        }));
+    
+        if (counter >= cmacs.size() or counter <= scan_count) {
+            return 0;
+        };
+
+        var res = counter;
+
+        for (i in Iter.range(0, sha.size() - 1)) {
+            if (Nat8.toNat(sha[i]) != hexToNat(subText(cmacs[counter - 1], i * 2, i * 2 + 2))) {
+                res := 0;
+            };
+        };
+   
+        return res;
+    };
+}
+
+================
+File: src/backend/sha.mo
+================
+/**
+ * Module      : SHA256.mo
+ * Description : Cryptographic hash function.
+ * Copyright   : 2020 DFINITY Stiftung
+ * License     : Apache 2.0 with LLVM Exception
+ * Maintainer  : Enzo Haussecker <enzo@dfinity.org>
+ * Stability   : Stable
+ */
+
+import Array "mo:base/Array";
+import Iter "mo:base/Iter";
+import Nat "mo:base/Nat";
+import Nat8 "mo:base/Nat8";
+import Nat32 "mo:base/Nat32";
+import Nat64 "mo:base/Nat64";
+
+module {
+
+  private let K : [Nat32] = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+    0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+    0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+    0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+    0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+    0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+    0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+    0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+    0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+  ];
+
+  private let S : [Nat32] = [
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+  ];
+
+  // Calculate a SHA256 hash.
+  public func sha256(data : [Nat8]) : [Nat8] {
+    let digest = Digest();
+    digest.write(data);
+    return digest.sum();
+  };
+
+  public class Digest() {
+
+    private let s = Array.thaw<Nat32>(S);
+
+    private let x = Array.init<Nat8>(64, 0);
+
+    private var nx = 0;
+
+    private var len : Nat64 = 0;
+
+    public func reset() {
+      for (i in Iter.range(0, 7)) {
+        s[i] := S[i];
+      };
+      nx := 0;
+      len := 0;
+    };
+
+    public func write(data : [Nat8]) {
+      var p = data;
+      len +%= Nat64.fromIntWrap(p.size());
+      if (nx > 0) {
+        let n = Nat.min(p.size(), 64 - nx);
+        for (i in Iter.range(0, n - 1)) {
+          x[nx + i] := p[i];
+        };
+        nx += n;
+        if (nx == 64) {
+          let buf = Array.freeze<Nat8>(x);
+          block(buf);
+          nx := 0;
+        };
+        p := Array.tabulate<Nat8>(p.size() - n, func (i) {
+          return p[n + i];
+        });
+      };
+      if (p.size() >= 64) {
+        let n = Nat64.toNat(Nat64.fromIntWrap(p.size()) & (^ 63));
+        let buf = Array.tabulate<Nat8>(n, func (i) {
+          return p[i];
+        });
+        block(buf);
+        p := Array.tabulate<Nat8>(p.size() - n, func (i) {
+          return p[n + i];
+        });
+      };
+      if (p.size() > 0) {
+        for (i in Iter.range(0, p.size() - 1)) {
+          x[i] := p[i];
+        };
+        nx := p.size();
+      };
+    };
+
+    public func sum() : [Nat8] {
+      var m = 0;
+      var n = len;
+      var t = Nat64.toNat(n) % 64;
+      var buf : [var Nat8] = [var];
+      if (56 > t) {
+        m := 56 - t;
+      } else {
+        m := 120 - t;
+      };
+      n := n << 3;
+      buf := Array.init<Nat8>(m, 0);
+      if (m > 0) {
+        buf[0] := 0x80;
+      };
+      write(Array.freeze<Nat8>(buf));
+      buf := Array.init<Nat8>(8, 0);
+      for (i in Iter.range(0, 7)) {
+        let j : Nat64 = 56 -% 8 *% Nat64.fromIntWrap(i);
+        buf[i] := Nat8.fromIntWrap(Nat64.toNat(n >> j));
+      };
+      write(Array.freeze<Nat8>(buf));
+      let hash = Array.init<Nat8>(32, 0);
+      for (i in Iter.range(0, 7)) {
+        for (j in Iter.range(0, 3)) {
+          let k : Nat32 = 24 -% 8 *% Nat32.fromIntWrap(j);
+          hash[4 * i + j] := Nat8.fromIntWrap(Nat32.toNat(s[i] >> k));
+        };
+      };
+      return Array.freeze<Nat8>(hash);
+    };
+
+    private func block(data : [Nat8]) {
+      var p = data;
+      var w = Array.init<Nat32>(64, 0);
+      while (p.size() >= 64) {
+        var j = 0;
+        for (i in Iter.range(0, 15)) {
+          j := i * 4;
+          w[i] :=
+            Nat32.fromIntWrap(Nat8.toNat(p[j + 0])) << 24 |
+            Nat32.fromIntWrap(Nat8.toNat(p[j + 1])) << 16 |
+            Nat32.fromIntWrap(Nat8.toNat(p[j + 2])) << 08 |
+            Nat32.fromIntWrap(Nat8.toNat(p[j + 3])) << 00;
+        };
+        var v1 : Nat32 = 0;
+        var v2 : Nat32 = 0;
+        var t1 : Nat32 = 0;
+        var t2 : Nat32 = 0;
+        for (i in Iter.range(16, 63)) {
+          v1 := w[i - 02];
+          v2 := w[i - 15];
+          t1 := rot(v1, 17) ^ rot(v1, 19) ^ (v1 >> 10);
+          t2 := rot(v2, 07) ^ rot(v2, 18) ^ (v2 >> 03);
+          w[i] :=
+              t1 +% w[i - 07] +%
+              t2 +% w[i - 16];
+        };
+        var a = s[0];
+        var b = s[1];
+        var c = s[2];
+        var d = s[3];
+        var e = s[4];
+        var f = s[5];
+        var g = s[6];
+        var h = s[7];
+        for (i in Iter.range(0, 63)) {
+          t1 := rot(e, 06) ^ rot(e, 11) ^ rot(e, 25);
+          t1 +%= (e & f) ^ (^ e & g) +% h +% K[i] +% w[i];
+          t2 := rot(a, 02) ^ rot(a, 13) ^ rot(a, 22);
+          t2 +%= (a & b) ^ (a & c) ^ (b & c);
+          h := g;
+          g := f;
+          f := e;
+          e := d +% t1;
+          d := c;
+          c := b;
+          b := a;
+          a := t1 +% t2;
+        };
+        s[0] +%= a;
+        s[1] +%= b;
+        s[2] +%= c;
+        s[3] +%= d;
+        s[4] +%= e;
+        s[5] +%= f;
+        s[6] +%= g;
+        s[7] +%= h;
+        p := Array.tabulate<Nat8>(p.size() - 64, func (i) {
+          return p[i + 64];
+        });
+      };
+    };
+  };
+
+  private let rot : (Nat32, Nat32) -> Nat32 = Nat32.bitrotRight;
+};
+
+================
+File: src/frontend/edge.html
+================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+    <title>Invalid scan sorry bro, try again with the real tag!</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #ff007f, #007fff);
+            color: #fff;
+            font-family: 'Arial Black', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 4rem;
+            text-transform: uppercase;
+            margin-top: 20vh;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+        }
+        p {
+            font-size: 1.5rem;
+            margin: 1rem auto;
+            max-width: 800px;
+        }
+        a {
+            text-decoration: none;
+            color: #fff;
+            padding: 10px 20px;
+            border: 2px solid #fff;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        a:hover {
+            background-color: #fff;
+            color: #007fff;
+        }
+        .neon {
+            animation: neon-flicker 1.5s infinite;
+        }
+        @keyframes neon-flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow: 
+                    0 0 5px #fff,
+                    0 0 10px #fff,
+                    0 0 20px #ff007f,
+                    0 0 30px #ff007f,
+                    0 0 40px #ff007f,
+                    0 0 50px #ff007f,
+                    0 0 75px #ff007f;
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .ii-button {
+            background-color: #29ABE2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .ii-button:hover {
+            background-color: #1a8ac0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg"></canvas>
+    <h1 class="neon">Invalid scan<br />sorry bro!</h1>
+    <p>try again with the real tag!</p>
+
+
+    <script>
+        // Edgy dynamic background
+        const canvas = document.getElementById('bg');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let particles = [];
+        const colors = ['#ff007f', '#007fff', '#ffdd00'];
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.radius = Math.random() * 3 + 1;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        initParticles();
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            particles = [];
+            initParticles();
+        });
+    </script>
+
+
+</body>
+</html>
+
+================
+File: src/frontend/index.html
+================
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+    <title>Demo dynamic NFC route protection</title>
+    <style>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Dynamic NFC route protection</h1>
+        </header>
+
+        <img class="boot-image" src="/velcro_boot.webp" alt="velcro boot">
+        
+    </div>
+    
+</body>
+</html>
+
+================
+File: src/frontend/page1.html
+================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Page 1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        nav {
+            margin-bottom: 20px;
+        }
+        nav a {
+            color: #0066cc;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="page1.html">Page 1</a>
+        <a href="page2.html">Page 2</a>
+    </nav>
+    <div class="container">
+        <h1>Welcome to Page 1</h1>
+        <p>This is a simple first page with some example content.</p>
+        <p>Features of this page:</p>
+        <ul>
+            <li>Clean, minimal design</li>
+            <li>Responsive layout</li>
+            <li>Navigation between pages</li>
+        </ul>
+    </div>
+</body>
+</html>
+
+================
+File: src/frontend/page2.html
+================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Page 2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        nav {
+            margin-bottom: 20px;
+        }
+        nav a {
+            color: #0066cc;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #0066cc;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #0052a3;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="page1.html">Page 1</a>
+        <a href="page2.html">Page 2</a>
+    </nav>
+    <div class="container">
+        <h1>Welcome to Page 2</h1>
+        <p>This is the second page with a different layout and a button element.</p>
+        <p>This page demonstrates:</p>
+        <ul>
+            <li>Consistent styling with Page 1</li>
+            <li>Additional button component</li>
+            <li>Different content structure</li>
+        </ul>
+        <a href="page1.html" class="button">Go back to Page 1</a>
+    </div>
+</body>
+</html>
+
+================
+File: .gitignore
+================
+.dfx/
+.mops/
+.vscode/
+node_modules/
+package-lock.json
+repomix-output.txt
+.env
+canister_ids.json
+cmacs.json
+__pycache__
+
+================
+File: dfx.json
+================
+{
+    "canisters": {
+      "dyna_nfc_protect_routes": {
+        "main": "src/backend/main.mo",
+        "type": "motoko"
+      }
+    },
+    "defaults": {
+      "build": {
+        "args": "",
+        "packtool": "mops sources"
+      }
+    },
+    "output_env_file": ".env",
+    "version": 1
+  }
+
+================
+File: Makefile
+================
+include .env
+
+# Access routes in a local replica
+# canisterId.localhost:4943/whatever_route
+# http://br5f7-7uaaa-aaaaa-qaaca-cai.localhost:4943
+
+# repomix --ignore "ufr-lib/"     
+
+
+REPLICA_URL := $(if $(filter ic,$(subst ',,$(DFX_NETWORK))),https://ic0.app,http://127.0.0.1:4943)
+CANISTER_NAME := $(shell grep "CANISTER_ID_" .env | grep -v "INTERNET_IDENTITY\|CANISTER_ID='" | head -1 | sed 's/CANISTER_ID_\([^=]*\)=.*/\1/' | tr '[:upper:]' '[:lower:]')
+CANISTER_ID := $(CANISTER_ID_$(shell echo $(CANISTER_NAME) | tr '[:lower:]' '[:upper:]'))
+
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+    OPEN_CMD := open
+else ifeq ($(UNAME), Linux)
+    OPEN_CMD := xdg-open
+else
+    OPEN_CMD := start
+endif
+
+all:
+	dfx deploy $(CANISTER_NAME)
+	dfx canister call $(CANISTER_NAME) invalidate_cache
+	
+ic:
+	dfx deploy --ic
+	dfx canister call --ic $(CANISTER_ID) invalidate_cache
+
+url:
+	$(OPEN_CMD) http://$(CANISTER_ID).localhost:4943/
+
+upload_assets:
+	icx-asset --replica $(REPLICA_URL) --pem ~/.config/dfx/identity/raygen/identity.pem sync $(CANISTER_ID) src/frontend/
+	dfx canister call $(if $(filter https://ic0.app,$(REPLICA_URL)),--ic,) $(CANISTER_NAME) invalidate_cache
+
+setup_route_example:
+	python3 scripts/setup_route.py $(CANISTER_ID) page1.html --params "key=value"
+
+random_key:
+	python3 scripts/setup_route.py $(CANISTER_ID) page2.html --random-key --params "key=value"
+
+production_ic:
+	python3 scripts/setup_route.py $(CANISTER_ID) page1.html --params "key=value" --ic
+
+reinstall:
+	dfx canister install $(CANISTER_NAME) --mode=reinstall
+
+================
+File: mops.toml
+================
+[package]
+name = "http_demo"
+version = "0.1.0"
+description = "A simple HTTP server demo"
+
+[dependencies]
+base = "0.14.4"
+server = "1.0.0"
+http-parser = "0.3.4"
+assets = "0.2.2"
+
+
+
+================================================================
+End of Codebase
+================================================================

@@ -1,9 +1,5 @@
 include .env
 
-# Access routes in a local replica
-# canisterId.localhost:4943/whatever_route
-# http://br5f7-7uaaa-aaaaa-qaaca-cai.localhost:4943
-
 # repomix --ignore "ufr-lib/"     
 
 
