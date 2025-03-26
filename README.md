@@ -1,21 +1,26 @@
 # Dynamic NFC Route Protection
 
-This project built with canisters on the ICP (Internet Computer Protocol) implements a system for protecting web routes using the NFC tags NTAG 424 DNA. 
-Afer canister deployment it allows to dynamically protects specific web pages URLs by requiring NTAG 424 DNA tag authentication.
+This project built with a canister on the ICP (Internet Computer Protocol) implements a system for protecting web routes using the NFC tags NTAG 424 DNA. 
+Afer canister deployment it allows to dynamically protects specific web pages URLs by requiring NTAG 424 DNA tag authentication. What makes this solution unique is that it can be seamlessly integrated into any existing canister to secure specific routes. Anyone with a D-Logic uFR or uFR ZERO series reader/writer and NTAG 424 tags can easily implement this protection system with very few modifications to their application.
 
 ## Overview
 
-The system consists of:
+This repo is an example of this system and consists of:
 
-- A Motoko canister that act at the same time as a backend service that validates NFC authentication and serves web content. 
+- A motoko canister that act at the same time as a backend service that validates NFC authentication and serves web content.
 - Python scripts to program NFC cards and configure protected routes on the deployed canisters
 - Simple web pages to demonstrate the concept
 - reader script with node to test the system locally
 
 ## Prerequisites
 
-- **DFINITY SDK (dfx)** - [Installation Guide]https://internetcomputer.org/docs/building-apps/getting-started/install
-- **Python 3+** with the required packages:
+- **DFINITY SDK (dfx)** - [Installation Guide](https://internetcomputer.org/docs/building-apps/getting-started/install)
+
+```sh
+# Node.js is required
+sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+  ```
+- **Python 3** with the required packages:
   - `pycrypto`
   - `ctypes`
 
@@ -34,9 +39,9 @@ The system consists of:
   ```
 
 - **A D-Logic NFC card reader/writer** 
-Only works with D-Logic uFR and uFR ZERO series: [Available here]https://www.d-logic.com/
+Only works with D-Logic uFR and uFR ZERO series reader/writer: [Available here](https://www.d-logic.com/)
 with the appropriate drivers :
-[D-Logic code repository]https://code.d-logic.com/-/snippets/1
+[D-Logic code repository](https://code.d-logic.com/-/snippets/1)
 
 - **One NTAG 424 DNA NFC tag for each protected URL**
 
@@ -133,11 +138,6 @@ node simple_reader.js
 ```
 
 The browser will automatically open with a special authenticated URL. The canister will validate the dynamic URL signature and if valid the protected content will display instead of the error page.
-
-## Security Considerations
-
-- URLs are dynamically generated and expire after one-time use.
-- The Motoko backend verifies NFC authentication.
 
 ## License
 
