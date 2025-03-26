@@ -31,7 +31,7 @@ upload_assets:
 	icx-asset --replica $(REPLICA_URL) --pem ~/.config/dfx/identity/raygen/identity.pem sync $(CANISTER_ID) src/frontend/
 	dfx canister call $(if $(filter https://ic0.app,$(REPLICA_URL)),--ic,) $(CANISTER_NAME) invalidate_cache
 
-setup_route_example:
+protect_route_example:
 	python3 scripts/setup_route.py $(CANISTER_ID) page1.html --params "key=value"
 
 random_key:
