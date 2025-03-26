@@ -6,6 +6,7 @@ import os
 import time
 import card_types
 from datetime import datetime
+
 ##########################################################################
 # uFCODER - LOAD LIBRARY
 ##########################################################################
@@ -47,14 +48,12 @@ def ReaderOpenEx(reader_type, port_name, port_interface, arg):
 
     return openReader(reader_type, b, port_interface, c)
 
-##########################################################################
 
 def ReaderOpen():
     openReader = uFR.ReaderOpen
 
     return openReader()
 
-##########################################################################
 
 def ReaderUISignal(light, sound):
     uiSignal = uFR.ReaderUISignal
@@ -62,7 +61,6 @@ def ReaderUISignal(light, sound):
     uiSignal.restype = c_uint
     uiSignal(light, sound)
 
-##########################################################################
 
 def ReaderClose():
     func = uFR.ReaderClose
@@ -102,7 +100,9 @@ def nt4h_set_global_parameters(file_no, key_no, communication_mode):
     nt4h_set_global_parameters.restype = c_uint
 
     return nt4h_set_global_parametersFunc(file_no, key_no, communication_mode)
+
 ##########################################################################
+
 def nt4h_change_sdm_file_settings_pk(aes_key_ext, file_no, key_no, curr_communication_mode, new_communication_mode, 
                                     read_key_no, write_key_no, read_write_key_no, change_key_no,
                                     uid_enable, read_ctr_enable, read_ctr_limit_enable, enc_file_data_enable,
@@ -346,9 +346,10 @@ def LinearRead(data, linear_address, length, bytes_written, auth_mode, key):
 
     LinearReadFunc.restype = c_uint
     return LinearReadFunc(data, linear_address, length, byref(bytes_written), auth_mode, key)
+
 ##########################################################################
-##########################################################################
-##########################################################################
+
+
 def read_and_verify_sdm_data():
     status = 0
     global_file_no = c_ubyte(2)
@@ -482,7 +483,9 @@ def read_and_verify_sdm_data():
     else:
         print("File is not in SDM mode.")
     return status
+
 ##########################################################################
+
 def log_to_file(uid_str, message, status=None):
     """
     Log messages to a file named with the card's UID.
@@ -505,25 +508,31 @@ def log_to_file(uid_str, message, status=None):
     print(message)
 
 ##########################################################################
+
 T4T_AUTHENTICATION = {
     "T4T_WITHOUT_PWD_AUTH": 0x60,
     "T4T_PK_PWD_AUTH": 0x80,
     "T4T_RKA_PWD_AUTH": 0x02,
 }
 ##########################################################################
+
 def GetDllVersionStr():
     GetDllVersionStrFunc = uFR.GetDllVersionStr
     GetDllVersionStrFunc.restype = ctypes.c_char_p
 
     return GetDllVersionStrFunc().decode('utf-8')
+
 ##########################################################################
+
 def UFRStatus2String(status):
     ufrStatus2String = uFR.UFR_Status2String
     ufrStatus2String.argtypes = [ c_uint32 ]
     ufrStatus2String.restype = ctypes.c_char_p
 
     return ufrStatus2String(status).decode('utf-8')
+
 ##########################################################################
+
 def uFR_NT4H_Status2String(status):
     if status < 0xC0 or status > 0xCB:
         return UFRStatus2String(status)
@@ -545,7 +554,9 @@ def uFR_NT4H_Status2String(status):
         }
         nt4h_status += nt4h_status_dict.get(status, '')
         return nt4h_status
+
 ##########################################################################
+
 def uid_to_string(uid, uid_size):
     """
     Convert a UID (c_ubyte array) to a string with colon-separated hex bytes.
@@ -556,7 +567,9 @@ def uid_to_string(uid, uid_size):
     """
     uid_str = '-'.join(f'{uid[n]:02x}' for n in range(uid_size.value)).upper()
     return uid_str
+
 ##########################################################################
+
 def generate_random_aes_key_hex():
     """
     Generate a random 16-byte AES key and return it as a hex string.
@@ -565,17 +578,22 @@ def generate_random_aes_key_hex():
     """
     key = os.urandom(16)  # Generate 16 random bytes
     return key.hex().upper()  # Convert to a hexadecimal string
+
 ##########################################################################
+
 # Function to create a slice of the buffer
 def slice_c_ubyte_buffer(buffer, start, end):
     if start < 0 or end > len(buffer) or start > end:
         raise ValueError("Invalid slice range")
     size = end - start
     return (c_ubyte * size)(*buffer[start:end])
+
 ##########################################################################
+
 def buffer_to_ascii_string(buffer):
     """Convert an ASCII buffer to a string, replacing non-printable characters with '.'."""
     return ''.join(chr(b) if 32 <= b <= 126 else '.' for b in buffer)
+
 ##########################################################################
 
 old_uid = (c_ubyte * 11)()
@@ -617,13 +635,19 @@ def isCardInField():
     else: 
         memset(old_uid, 0, ctypes.sizeof(old_uid))
         return False
+
 ##########################################################################
+
 def char_to_code(char):
         return ord(char)
+
 ##########################################################################
+
 def str_to_hex(string):
     return [ord(c) for c in string]
+
 ##########################################################################
+
 # Convert the string back into a hex buffer
 def string_to_hex_buffer(hex_string):
     if len(hex_string) % 2 != 0:
@@ -631,6 +655,7 @@ def string_to_hex_buffer(hex_string):
     return (c_ubyte * (len(hex_string) // 2))(
         *(int(hex_string[i:i+2], 16) for i in range(0, len(hex_string), 2))
     )
+
 ##########################################################################
 
 def list_to_ascii_string(data_list):
@@ -727,7 +752,9 @@ def add_additional_ndef_payload_parameter(sdm_payload, param_name, param_value):
     result["extended_payload_length"] = len(sdm_payload)
 
     return result
+
 ##########################################################################
+
 if __name__ == '__main__':
     print("---------------------------------------------")
     print("https://www.d-logic.com/nfc-rfid-reader-sdk/")

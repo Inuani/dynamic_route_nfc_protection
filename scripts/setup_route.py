@@ -6,6 +6,10 @@ from typing import Optional, Tuple
 from ctypes import c_ubyte, c_uint, c_uint16, byref, memset, sizeof
 import ntag424_programmer as ntp
 
+##########################################################################
+# URL ROUTE PROTECTION WITH NFC NTAG424 DNA tags
+##########################################################################
+
 def get_canister_name_from_dfx() -> Optional[str]:
     """Read dfx.json and get the canister name."""
     try:
@@ -19,6 +23,8 @@ def get_canister_name_from_dfx() -> Optional[str]:
         print(f"Error reading dfx.json: {str(e)}")
         return None
 
+##########################################################################
+
 def run_command(command: str) -> Tuple[int, str, str]:
     """Run a shell command and return its exit code, stdout, and stderr."""
     process = subprocess.Popen(
@@ -30,6 +36,8 @@ def run_command(command: str) -> Tuple[int, str, str]:
     )
     stdout, stderr = process.communicate()
     return process.returncode, stdout, stderr
+
+##########################################################################
 
 def setup_route_and_program(canister_id: str, page: str, params: str = None, use_random_key: bool = False, ic_mode: bool = False) -> bool:
     """Setup protected route and program NFC card."""
@@ -190,6 +198,8 @@ def setup_route_and_program(canister_id: str, page: str, params: str = None, use
         return False
     finally:
         ntp.ReaderClose()
+
+##########################################################################
 
 def main():
     parser = argparse.ArgumentParser(description='Program NFC card and set up protected route')

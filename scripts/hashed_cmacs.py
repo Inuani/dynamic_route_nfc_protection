@@ -6,6 +6,10 @@ import argparse
 import hashlib
 import json
 
+##########################################################################
+# HASHED CMACS GENERATION
+##########################################################################
+
 parser = argparse.ArgumentParser(
     prog='CMAC Generator',
     description='Generate CMAC hashes for NFC authentication'

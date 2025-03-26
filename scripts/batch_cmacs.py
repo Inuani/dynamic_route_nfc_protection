@@ -3,16 +3,18 @@ import json
 import subprocess
 import sys
 
+##########################################################################
+# BATCH CMAC PROCESSING WITH DFX
+##########################################################################
+
 def split_list(lst, batch_size):
     return [lst[i:i + batch_size] for i in range(0, len(lst), batch_size)]
 
 def convert_to_candid(data):
-    # Properly quote each string
     quoted_strings = [f'"{x}"' for x in data]
     return '(vec {' + ';'.join(quoted_strings) + '})'
 
 def main():
-    # Updated to accept an optional --ic flag
     if len(sys.argv) not in [4, 5]:
         print("Usage: python3 batch_cmacs.py <cmacs_file> <canister_name> <page_path> [--ic]")
         sys.exit(1)
@@ -21,7 +23,6 @@ def main():
     canister_name = sys.argv[2]
     page_path = sys.argv[3]
     
-    # Check if --ic flag is present
     ic_mode = False
     if len(sys.argv) == 5 and sys.argv[4] == "--ic":
         ic_mode = True
@@ -38,7 +39,6 @@ def main():
 
     print(f"Processing {len(all_cmacs)} CMACs in {total_batches} batches")
     
-    # Add --ic flag to dfx command if in IC mode
     ic_flag = "--ic " if ic_mode else ""
 
     # Process each batch
@@ -46,7 +46,6 @@ def main():
         print(f"Processing batch {i}/{total_batches}")
         candid_data = convert_to_candid(batch)
         
-        # Call the canister with the batch, including --ic flag if needed
         cmd = f'dfx canister call {ic_flag}{canister_name} append_route_cmacs \'("{page_path}", {candid_data})\''
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         

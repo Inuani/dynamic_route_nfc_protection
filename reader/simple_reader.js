@@ -2,10 +2,9 @@ const ffi = require('ffi-napi');
 const ref = require('ref-napi');
 const { exec } = require('child_process');
 
-// Path to uFCoder library 
 var dllPath = "./libuFCoder-x86_64.so"
 
-// Define the functions we need from the library
+// Functions we need from the library
 var uFCoder = ffi.Library(dllPath, {
   "ReaderOpen": ['int', []],
   "ReaderClose": ['int', []],
@@ -15,12 +14,11 @@ var uFCoder = ffi.Library(dllPath, {
   "UFR_Status2String": ['string', ['int']],
 });
 
-// Authentication constants
 const T4T_AUTHENTICATION = {
   T4T_WITHOUT_PWD_AUTH: 0x60
 };
 
-// Function to open URL in browser based on platform
+
 function openURL(url) {
   let command;
   switch (process.platform) {
@@ -89,15 +87,13 @@ async function readSDMDataAndOpenBrowser() {
 
     console.log("Opening URL:", url);
     
-    // Open the URL in the default browser
     openURL(url);
 
   } finally {
-    // Close reader
     uFCoder.ReaderClose();
     console.log("Reader closed");
   }
 }
 
-// Run the function
+
 readSDMDataAndOpenBrowser().catch(console.error);
