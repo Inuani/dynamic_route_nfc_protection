@@ -25,11 +25,11 @@ sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
   - `ctypes`
 
 - **Rust Toolchain & icx-asset**
-  If Rust is not installed, install it using [rustup](https://rustup.rs/):
+  If Rust is not installed, install it using [rustup](https://rustup.rs/) :
   
   ```sh
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-  source $HOME/.cargo/env  # Ensure Rust is in the path
+  source $HOME/.cargo/env
   ```
   
   Then, install `icx-asset`:
@@ -39,7 +39,8 @@ sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
   ```
 
 - **A D-Logic NFC card reader/writer** 
-Only works with D-Logic uFR and uFR ZERO series reader/writer: [Available here](https://www.d-logic.com/)
+Only works with D-Logic uFR and uFR ZERO series reader/writer : [Available here](https://www.d-logic.com/)
+
 with the appropriate drivers :
 [D-Logic code repository](https://code.d-logic.com/-/snippets/1)
 
@@ -66,7 +67,7 @@ with the appropriate drivers :
 
 Before you begin, update the Makefile to use your identity:
 - locate the `upload_assets` target
-- Change the path from `~/.config/dfx/identity/raygen/identity.pem` to your identity's pem file path [more doc here]https://internetcomputer.org/docs/building-apps/getting-started/identities
+- Change the path from `~/.config/dfx/identity/raygen/identity.pem` to your identity's pem file path [more doc here](https://internetcomputer.org/docs/building-apps/getting-started/identities)
 
 Then deploy with:
 
@@ -138,6 +139,25 @@ node simple_reader.js
 ```
 
 The browser will automatically open with a special authenticated URL. The canister will validate the dynamic URL signature and if valid the protected content will display instead of the error page.
+
+## Live Example
+
+Here is a working implementation that is build on this single backend & assset webserver
+canister that demonstrates how physical products can be connected to digital assets using NFC protection:
+
+https://75y2r-piaaa-aaaak-qt2tq-cai.raw.icp0.io/
+
+This application connects a physical hoodie to its digital twins canister counterpart.
+The hoodie contains 10 embedded NFC tags, each linked to a different music track when scanned.
+The system implements a gamification aspect:
+
+The hoodie gains experience points when tags are scanned
+Additional XP is earned when new songs are uploaded
+While the song URLs can be accessed directly, only NFC tag scans contribute to the hoodie's experience
+
+<img src="src/example.png" alt="web page hoodie" width="700" />
+
+<img src="src/example2.jpg" alt="rap hoodie phone" width="700" />
 
 ## License
 
