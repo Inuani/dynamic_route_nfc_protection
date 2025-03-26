@@ -93,7 +93,7 @@ make random_key
 make production_ic
 ```
 
-## Understanding Route Proection Creation
+## Understanding Route Protection Creation
 
 ```sh
 python scripts/setup_route.py <canister_id> <page_path> [--random-key] [--params "key=value"] [--ic]
@@ -112,17 +112,32 @@ Optional Flags:
 
 --ic: Configures the tag for the Internet Computer mainnet instead of a local replica. Use this flag when deploying to production on the IC network.
 
-## Usage
+## Testing a Protected Route:
 
-- Tap the NFC card to access a protected route with a NFC reader such as a smartphone. 
-- The system will validate the dynamic URL signature.
-- If authentication succeeds, access is granted to the protected URL.
+After programming the NFC tag, you can verify the protection works:
+
+Test Access Without NFC Tag:
+
+Try accessing the protected URL directly in your browser
+You should be redirected to the "Invalid scan" page
+
+
+Test Access With NFC Tag:
+
+Place the programmed tag on the NFC reader
+Run the reader software:
+
+```sh
+cd reader
+node simple_reader.js
+```
+
+The browser will automatically open with a special authenticated URL. The canister will validate the dynamic URL signature and if valid the protected content will display instead of the error page.
 
 ## Security Considerations
 
 - URLs are dynamically generated and expire after one-time use.
 - The Motoko backend verifies NFC authentication.
-- Ensure that only trusted devices can program NFC cards.
 
 ## License
 
